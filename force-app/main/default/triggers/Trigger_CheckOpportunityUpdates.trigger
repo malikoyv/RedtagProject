@@ -1,73 +1,62 @@
-trigger Trigger_CheckOpportunityUpdates on Opportunity (after update) {
-    List<Account> accountsToUpsert = new List<Account>();
-    List<Contact> contactsToUpsert = new List<Contact>();
-    List<Opportunity> oppsToUpdate = new List<Opportunity>();
+trigger Trigger_CheckOpportunityUpdates on Opportunity (before update) {
+    List<Account> accountsToUpdate = new List<Account>();
+    List<Account> accountsToInsert = new List<Account>();
 
-    Map<Id, Account> existingAccounts = new Map<Id, Account>([SELECT Id, Name FROM Account WHERE Id IN (SELECT AccountId FROM Opportunity WHERE Id IN :Trigger.newMap.keySet())]);
-    Map<Id, Contact> existingContacts = new Map<Id, Contact>([SELECT Id, LastName FROM Contact WHERE Id IN (SELECT Contact__c FROM Opportunity WHERE Id IN :Trigger.newMap.keySet())]);
+    List<Contact> contactsToUpdate = new List<Contact>();
+    List<Contact> contactsToInsert = new List<Contact>();
 
-    for (Opportunity newOpp : Trigger.new) {
-        Opportunity oldOpp = Trigger.oldMap.get(newOpp.Id);
-        Boolean updateOpportunity = false;
+    Map<Id, String> oldContactNamesMap = new Map<Id, String>();
+    Map<Id, String> oldAccountNamesMap = new Map<Id, String>();
 
-        if (newOpp.AccountName__c != oldOpp.AccountName__c) {
-            Account existingAccount = existingAccounts.get(newOpp.AccountId);
-            if (existingAccount != null && (existingAccount.Name.contains(newOpp.AccountName__c) || newOpp.AccountName__c.contains(existingAccount.Name))) {
-                existingAccount.Name = newOpp.AccountName__c;
-                accountsToUpsert.add(existingAccount);
-            } else {
-                Account newAccount = new Account(Name = newOpp.AccountName__c);
-                accountsToUpsert.add(newAccount);
-                newOpp.AccountId = null;
-                updateOpportunity = true;
-            }
+    if (Trigger.isBefore && Trigger.isUpdate) {
+        for (Opportunity oldOp : Trigger.old) {
+                oldAccountNamesMap.put(oldOp.AccountId, oldOp.AccountName__c);
+                oldContactNamesMap.put(oldOp.ContactId, oldOp.ContactLastName__c);
         }
 
-        if (newOpp.ContactLastName__c != oldOpp.ContactLastName__c) {
-            Contact existingContact = existingContacts.get(newOpp.Contact__c);
-            if (existingContact != null && (existingContact.LastName.contains(newOpp.ContactLastName__c) || newOpp.ContactLastName__c.contains(existingContact.LastName))) {
-                existingContact.LastName = newOpp.ContactLastName__c;
-                contactsToUpsert.add(existingContact);
-            } else {
-                Contact newContact = new Contact(LastName = newOpp.ContactLastName__c);
-                contactsToUpsert.add(newContact);
-                newOpp.Contact__c = null;
-                updateOpportunity = true;
-            }
-        }
-
-        if (updateOpportunity) {
-            oppsToUpdate.add(newOpp);
-        }
-    }
-
-    if (!accountsToUpsert.isEmpty()) {
-        upsert accountsToUpsert;
-    }
-    if (!contactsToUpsert.isEmpty()) {
-        upsert contactsToUpsert;
-    }
-
-    for (Opportunity opp : oppsToUpdate) {
-        if (opp.AccountId == null) {
-            for (Account acc : accountsToUpsert) {
-                if (acc.Name == opp.AccountName__c) {
-                    opp.AccountId = acc.Id;
-                    break;
+        for (Opportunity newOp : Trigger.new) {
+            if (newOp.AccountId != null) {
+                String oldName = oldAccountNamesMap.get(newOp.AccountId);
+                String newName = newOp.AccountName__c;
+                
+                if (oldName != null && newName != null) {
+                    if (oldName.contains(newName) || newName.contains(oldName)) {
+                        Account accToUpdate = new Account(Id = newOp.AccountId, Name = newName);
+                        accountsToUpdate.add(accToUpdate);
+                    } else {
+                        Account accToInsert = new Account(Name = newName);
+                        accountsToInsert.add(accToInsert);
+                    }
                 }
             }
-        }
-        if (opp.Contact__c == null) {
-            for (Contact con : contactsToUpsert) {
-                if (con.LastName == opp.ContactLastName__c) {
-                    opp.Contact__c = con.Id;
-                    break;
+            if (newOp.ContactId != null){
+                String oldName = oldContactNamesMap.get(newOp.ContactId);
+                String newName = newOp.ContactLastName__c;
+
+                if (oldName != null && newName != null){
+                    if (oldName.contains(newName) || newName.contains(oldName)){
+                        Contact contactToUpdate = new Contact(Id = newOp.ContactId, LastName = newName);
+                        contactsToUpdate.add(contactToUpdate);
+                    }
+                    else {
+                        Contact con = new Contact(LastName = newName);
+                        contactsToInsert.add(con);
+                    }
                 }
             }
         }
     }
 
-    if (!oppsToUpdate.isEmpty()) {
-        update oppsToUpdate;
+    if (!accountsToInsert.isEmpty()) {
+        insert accountsToInsert;
+    }
+    if (!accountsToUpdate.isEmpty()) {
+        update accountsToUpdate;
+    }
+    if (!contactsToInsert.isEmpty()){
+        insert contactsToInsert;
+    }
+    if (!contactsToUpdate.isEmpty()){
+        update contactsToUpdate;
     }
 }
