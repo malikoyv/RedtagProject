@@ -4,7 +4,7 @@ trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
     Set<Id> contactIds = new Set<Id>();
     
     for (Opportunity opp : Trigger.old) {
-        ownerIds.add(opp.OwnerId);
+        if (opp.Owner != null) ownerIds.add(opp.OwnerId);
         if (opp.AccountId != null) accountIds.add(opp.AccountId);
         if (opp.ContactId != null) contactIds.add(opp.ContactId);
     }
@@ -12,8 +12,11 @@ trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
     Map<Id, User> owners = new Map<Id, User>([SELECT Name, Email FROM User WHERE Id IN :ownerIds]);
     Map<Id, Account> accounts = new Map<Id, Account>([SELECT Name FROM Account WHERE Id IN :accountIds]);
     Map<Id, Contact> contacts = new Map<Id, Contact>([SELECT LastName FROM Contact WHERE Id IN :contactIds]);
+
+    // rewrtie to Map<Id, Opportunity>
     
     List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
+    
     
     for (Opportunity opp : Trigger.old) {
         User owner = owners.get(opp.OwnerId);
@@ -45,6 +48,11 @@ trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
     }
     
     if (!mails.isEmpty()) {
+        // debug
+        // List<Messaging.SendEmailResult> results = Messaging.sendEmail(mails);
+        // System.debug(results);
         Messaging.sendEmail(mails);
+
+        // rewrite with Messaging.MassEmailMessage
     }
 }
