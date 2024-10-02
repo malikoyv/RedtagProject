@@ -108,4 +108,29 @@ public with sharing class OpportunityTriggerHandler {
         }
     }
 
+    public void sendEmailAfterDelete(List<Opportunity> deletedOpps) {
+        List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+        Set<Id> ownerIds = new Set<Id>();
+        for (Opportunity opp : deletedOpps) {
+            ownerIds.add(opp.OwnerId);
+        }
+        Map<Id, User> ownerMap = new Map<Id, User>([SELECT Email FROM User WHERE Id IN :ownerIds]);
+
+        
+        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE Name = 'OpportunityDeletion' LIMIT 1];
+        
+        for (Opportunity opp : deletedOpps) {
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+            
+            mail.setTemplateId(template.Id);
+            
+            mail.setWhatId(opp.Id);
+            mail.setToAddresses(new List<String>{ownerMap.get(opp.OwnerId).Email});
+            
+            emailsToSend.add(mail);
+        }
+        
+        List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
+        System.debug(results);
+    }
 }
