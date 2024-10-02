@@ -1,27 +1,8 @@
 trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
-    Set<Id> ownerIds = new Set<Id>();
-    Set<Id> accountIds = new Set<Id>();
-    Set<Id> contactIds = new Set<Id>();
-    
-    for (Opportunity opp : Trigger.old) {
-        if (opp.Owner != null) ownerIds.add(opp.OwnerId);
-        if (opp.AccountId != null) accountIds.add(opp.AccountId);
-        if (opp.ContactId != null) contactIds.add(opp.ContactId);
-    }
-    
-    Map<Id, User> owners = new Map<Id, User>([SELECT Name, Email FROM User WHERE Id IN :ownerIds]);
-    Map<Id, Account> accounts = new Map<Id, Account>([SELECT Name FROM Account WHERE Id IN :accountIds]);
-    Map<Id, Contact> contacts = new Map<Id, Contact>([SELECT LastName FROM Contact WHERE Id IN :contactIds]);
-
-    // rewrtie to Map<Id, Opportunity>
-    
     List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
     
-    
     for (Opportunity opp : Trigger.old) {
-        User owner = owners.get(opp.OwnerId);
-        Account acc = accounts.get(opp.AccountId);
-        Contact con = contacts.get(opp.ContactId);
+        User owner = opp.Owner;
         
         if (owner != null && owner.Email != null) {
             Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
@@ -37,9 +18,6 @@ trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
             emailBody += '<li>Amount: ' + (opp.Amount != null ? opp.Amount.format() : 'N/A') + '</li>';
             emailBody += '</ul>';
             
-            if (con != null) emailBody += '<p>Contact: ' + con.LastName + '</p>';
-            if (acc != null) emailBody += '<p>Account: ' + acc.Name + '</p>';
-            
             emailBody += '</body></html>';
             
             mail.setHtmlBody(emailBody);
@@ -51,6 +29,7 @@ trigger Trigger_EmailWhenOpportunityDelete on Opportunity (after delete) {
         // debug
         // List<Messaging.SendEmailResult> results = Messaging.sendEmail(mails);
         // System.debug(results);
+        // use template
         Messaging.sendEmail(mails);
 
         // rewrite with Messaging.MassEmailMessage
