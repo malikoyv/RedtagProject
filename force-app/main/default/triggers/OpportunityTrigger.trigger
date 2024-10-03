@@ -6,6 +6,11 @@ trigger OpportunityTrigger on Opportunity (before insert, after insert, before u
     }
 
     if (Trigger.isBefore && Trigger.isUpdate){
+<<<<<<< HEAD
         handler.OnBeforeUpdate(Trigger.old, Trigger.new);
+=======
+        handler.updateOpportunityDetails(Trigger.new);
+        handler.updateOpportunityAccountAndContact(Trigger.old, Trigger.new);
+>>>>>>> parent of aad946d (add email sending to trigger handler)
     }
 }

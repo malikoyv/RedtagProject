@@ -165,78 +165,28 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public void sendEmailAfterDelete(List<Opportunity> deletedOpps) {
-        // List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
-        // Set<Id> ownerIds = new Set<Id>();
-        // for (Opportunity opp : deletedOpps) {
-        //     ownerIds.add(opp.OwnerId);
-        // }
-        // Map<Id, User> ownerMap = new Map<Id, User>([SELECT Email FROM User WHERE Id IN :ownerIds]);
-
-        // EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE Name = 'OpportunityDeletion' LIMIT 1];
-        
-        // for (Opportunity opp : deletedOpps) {
-        //     Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-            
-        //     mail.setTemplateId(template.Id);
-            
-        //     mail.setWhatId(opp.Id);
-        //     mail.setTargetObjectId(ownerMap.get(opp.OwnerId).Id);
-            
-        //     emailsToSend.add(mail);
-        // }
-        
-        // List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
-        // System.debug(results);
-
-
-
-
+        List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
         Set<Id> ownerIds = new Set<Id>();
-        Set<Id> accountIds = new Set<Id>();
-        Set<Id> contactIds = new Set<Id>();
-        
         for (Opportunity opp : deletedOpps) {
             ownerIds.add(opp.OwnerId);
-            if (opp.AccountId != null) accountIds.add(opp.AccountId);
-            if (opp.ContactId != null) contactIds.add(opp.ContactId);
         }
+        Map<Id, User> ownerMap = new Map<Id, User>([SELECT Email FROM User WHERE Id IN :ownerIds]);
+
         
-        Map<Id, User> owners = new Map<Id, User>([SELECT Name, Email FROM User WHERE Id IN :ownerIds]);
-        Map<Id, Account> accounts = new Map<Id, Account>([SELECT Name FROM Account WHERE Id IN :accountIds]);
-        Map<Id, Contact> contacts = new Map<Id, Contact>([SELECT LastName FROM Contact WHERE Id IN :contactIds]);
-        
-        List<Messaging.SingleEmailMessage> mails = new List<Messaging.SingleEmailMessage>();
+        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE Name = 'OpportunityDeletion' LIMIT 1];
         
         for (Opportunity opp : deletedOpps) {
-            User owner = owners.get(opp.OwnerId);
-            Account acc = accounts.get(opp.AccountId);
-            Contact con = contacts.get(opp.ContactId);
+            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
             
-            if (owner != null && owner.Email != null) {
-                Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-                mail.setToAddresses(new String[]{owner.Email});
-                mail.setSubject('Opportunity record is deleted: ' + opp.Name);
-                
-                String emailBody = '<html><body>';
-                emailBody += '<p>Hi ' + owner.Name + ',</p>';
-                emailBody += '<p>Opportunity ' + opp.Name + ' was deleted:</p>';
-                emailBody += '<ul>';
-                emailBody += '<li>Opportunity Id: ' + opp.Id + '</li>';
-                emailBody += '<li>Opportunity Name: ' + opp.Name + '</li>';
-                emailBody += '<li>Amount: ' + (opp.Amount != null ? opp.Amount.format() : 'N/A') + '</li>';
-                emailBody += '</ul>';
-                
-                if (con != null) emailBody += '<p>Contact: ' + con.LastName + '</p>';
-                if (acc != null) emailBody += '<p>Account: ' + acc.Name + '</p>';
-                
-                emailBody += '</body></html>';
-                
-                mail.setHtmlBody(emailBody);
-                mails.add(mail);
-            }
+            mail.setTemplateId(template.Id);
+            
+            mail.setWhatId(opp.Id);
+            mail.setToAddresses(new List<String>{ownerMap.get(opp.OwnerId).Email});
+            
+            emailsToSend.add(mail);
         }
         
-        List<Messaging.SendEmailResult> results = Messaging.sendEmail(mails);
+        List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
         System.debug(results);
     }
 }
