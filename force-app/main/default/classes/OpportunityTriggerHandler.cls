@@ -1,94 +1,26 @@
 public with sharing class OpportunityTriggerHandler {
-    public void OnAfterInsert(List<Opportunity> newOppList){
-        createAccount(newOppList);
-        createContact(newOppList);
+
+    public void OnBeforeInsert(List<Opportunity> newOpps) {
+        updateOpportunityDetails(newOpps);
     }
 
-    public void OnBeforeUpdate(List<Opportunity> oldOppList, List<Opportunity> newOppList){
-        updateOpportunityDetails(newOppList);
-        updateOpportunityAccount(oldOppList, newOppList);
-        updateOpportunityContact(OldOppList, newOppList);
+    public void OnAfterInsert(List<Opportunity> newOpps) {
+        insertAccounts(newOpps);
+        insertContacts(newOpps);
+        updateOpportunityAccountAndContactIds(newOpps);
     }
 
-    public void createAccount(List<Opportunity> newOppList){
-        System.debug('Entering createAccount method');
-        List<Account> accountsToAdd = new List<Account>();
-        Map<Id, Account> oppAccountMap = new Map<Id, Account>();
-        List<Opportunity> oppToUpdate = new List<Opportunity>();
-    
-        for (Opportunity op : newOppList) {
-            if (String.isNotBlank(op.AccountName__c)) {
-                System.debug('Creating account for Opportunity: ' + op.Id + ' with AccountName: ' + op.AccountName__c);
-                Account newAccount = new Account(Name = op.AccountName__c);
-                accountsToAdd.add(newAccount);
-                oppAccountMap.put(op.Id, newAccount);
-            } else {
-                System.debug('AccountName__c is blank for Opportunity: ' + op.Id);
-            }
-        }
-    
-        if (!accountsToAdd.isEmpty()) {
-            try {
-                insert accountsToAdd;
-                System.debug('Inserted ' + accountsToAdd.size() + ' accounts');
-                
-                List<Opportunity> oppsToUpdate = new List<Opportunity>();
-                for (Id oppId : oppAccountMap.keySet()) {
-                    oppsToUpdate.add(new Opportunity(
-                        Id = oppId,
-                        AccountId = oppAccountMap.get(oppId).Id
-                    ));
-                }
-                
-                if (!oppsToUpdate.isEmpty()) {
-                    updateOpportunitiesAsync(JSON.serialize(oppsToUpdate));
-                    System.debug('Called updateOpportunitiesAsync with ' + oppsToUpdate.size() + ' opportunities');
-                }
-            } catch (Exception e) {
-                System.debug('Error in createAccount method: ' + e.getMessage());
-            }
-        } else {
-            System.debug('No accounts to add');
-        }
+    public void OnBeforeUpdate(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        updateOpportunityDetails(newOpps);
+        updateAccounts(oldOpps, newOpps, oldOppMap);
+        updateContacts(oldOpps, newOpps, oldOppMap);
     }
 
-    public void createContact(List<Opportunity> newOppList){
-        List<Contact> contactsToAdd = new List<Contact>();
-    
-        Map<Id, Contact> oppContactMap = new Map<Id, Contact>();
-    
-        List<Opportunity> oppToUpdate = new List<Opportunity>();
-    
-        for (Opportunity op : newOppList) {
-            Contact newContact = new Contact(LastName = op.ContactLastName__c);
-            contactsToAdd.add(newContact);
-            oppContactMap.put(op.Id, newContact);
-        }
-    
-        if (!contactsToAdd.isEmpty()) {
-            insert contactsToAdd;
-            
-            List<Opportunity> oppsToUpdate = new List<Opportunity>();
-            for (Id oppId : oppContactMap.keySet()) {
-                oppsToUpdate.add(new Opportunity(
-                    Id = oppId,
-                    Contact__c = oppContactMap.get(oppId).Id
-                ));
-            }
-            
-            if (!oppsToUpdate.isEmpty()) {
-                updateOpportunitiesAsync(JSON.serialize(oppsToUpdate));
-            }
-        }
+    public void OnAfterDelete(List<Opportunity> deletedOpps) {
+        OpportunityEmailService.sendEmailOnDelete(deletedOpps);
     }
 
-    @future
-    public static void updateOpportunitiesAsync(String serializedOpps) {
-        List<Opportunity> oppsToUpdate = (List<Opportunity>) JSON.deserialize(serializedOpps, List<Opportunity>.class);
-        update oppsToUpdate;
-    }
-
-    public void updateOpportunityDetails(List<Opportunity> newOppList){
+    private void updateOpportunityDetails(List<Opportunity> newOppList) {
         for (Opportunity opp : newOppList) {
             if (opp.AccountName__c != null) {
                 opp.Name = opp.AccountName__c + ' ' + Datetime.now().format('yyyy-MM-dd');
@@ -97,96 +29,107 @@ public with sharing class OpportunityTriggerHandler {
             }
             
             opp.StageName = 'Prospecting';
-            
             opp.CloseDate = Date.today().addDays(90);
         }
     }
 
-    public void updateOpportunityAccount(List<Opportunity> oldOppList, List<Opportunity> newOppList) {
-        Map<Id, Opportunity> oldOppMap = new Map<Id, Opportunity>(oldOppList);
-        List<Account> accountsToUpdate = new List<Account>();
-        List<Account> accountsToInsert = new List<Account>();
+    private void insertAccounts(List<Opportunity> newOppList) {
+        List<Account> accountsToAdd = new List<Account>();
+        for (Opportunity op : newOppList) {
+            accountsToAdd.add(new Account(Name = op.AccountName__c));
+        }
+        insert accountsToAdd;
+    }
 
-        for (Opportunity newOp : newOppList) {
-            Opportunity oldOp = oldOppMap.get(newOp.Id);
-            Account acc;
-            if (!newOp.AccountName__c.contains(oldOp.AccountName__c) || !oldOp.AccountName__c.contains(newOp.AccountName__c)) {
-                acc = new Account(Name = newOp.AccountName__c);
-                accountsToInsert.add(acc);
-                newOp.AccountId = acc.Id;
-            } else {
-                acc = new Account(Id = newOp.AccountId, Name = newOp.AccountName__c);
-                accountsToUpdate.add(acc);
-                newOp.AccountId = acc.Id;
+    private void insertContacts(List<Opportunity> newOppList) {
+        List<Contact> contactsToAdd = new List<Contact>();
+        for (Opportunity op : newOppList) {
+            contactsToAdd.add(new Contact(LastName = op.ContactLastName__c));
+        }
+        insert contactsToAdd;
+    }
+
+    private void updateOpportunityAccountAndContactIds(List<Opportunity> newOppList) {
+        Map<String, Id> accountNameToIdMap = new Map<String, Id>();
+        Map<String, Id> contactLastNameToIdMap = new Map<String, Id>();
+
+        for (Account acc : [SELECT Id, Name FROM Account WHERE Name IN :getAccountNames(newOppList)]) {
+            accountNameToIdMap.put(acc.Name, acc.Id);
+        }
+
+        for (Contact con : [SELECT Id, LastName FROM Contact WHERE LastName IN :getContactLastNames(newOppList)]) {
+            contactLastNameToIdMap.put(con.LastName, con.Id);
+        }
+
+        List<Opportunity> oppsToUpdate = new List<Opportunity>();
+        for (Opportunity opp : newOppList) {
+            Opportunity oppToUpdate = new Opportunity(Id = opp.Id);
+            if (accountNameToIdMap.containsKey(opp.AccountName__c)) {
+                oppToUpdate.AccountId = accountNameToIdMap.get(opp.AccountName__c);
             }
+            if (contactLastNameToIdMap.containsKey(opp.ContactLastName__c)) {
+                oppToUpdate.Contact__c = contactLastNameToIdMap.get(opp.ContactLastName__c);
+            }
+            oppsToUpdate.add(oppToUpdate);
         }
 
-        if (!accountsToInsert.isEmpty()){
-            insert accountsToInsert;
-        }
-        if (!accountsToUpdate.isEmpty()){
-            update accountsToUpdate;
+        if (!oppsToUpdate.isEmpty()) {
+            update oppsToUpdate;
         }
     }
 
-    public void updateOpportunityContact(List<Opportunity> oldOppList, List<Opportunity> newOppList) {
-        Map<Id, Opportunity> oldOppMap = new Map<Id, Opportunity>(oldOppList);
-        List<Contact> contactsToUpdate = new List<Contact>();
-        List<Contact> contactsToInsert = new List<Contact>();
-        
-        Map<Id, Id> oppToNewContactMap = new Map<Id, Id>();
-
-        for (Opportunity newOp : newOppList) {
+    private void updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        List<Account> accountsToUpsert = new List<Account>();
+        for (Opportunity newOp : newOpps) {
             Opportunity oldOp = oldOppMap.get(newOp.Id);
-            Contact con;
-            if (!newOp.ContactLastName__c.contains(oldOp.ContactLastName__c) || !oldOp.ContactLastName__c.contains(newOp.ContactLastName__c)) {
-                con = new Contact(LastName = newOp.ContactLastName__c);
-                contactsToInsert.add(con);
-                newOp.Contact__c = con.Id;
-            } else {
-                con = new Contact(Id = newOp.Contact__c, LastName = newOp.ContactLastName__c);
-                contactsToUpdate.add(con);
+            if (newOp.AccountName__c != oldOp.AccountName__c) {
+                Account acc;
+                if (newOp.AccountName__c.contains(oldOp.AccountName__c) || oldOp.AccountName__c.contains(newOp.AccountName__c)) {
+                    acc = new Account(Id = newOp.AccountId, Name = newOp.AccountName__c);
+                } else {
+                    acc = new Account(Name = newOp.AccountName__c);
+                }
+                upsert acc;
+                newOp.AccountId = acc.Id;
+            }
+        }
+    }
+
+    private void updateContacts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        List<Contact> contactsToUpsert = new List<Contact>();
+        for (Opportunity newOp : newOpps) {
+            Opportunity oldOp = oldOppMap.get(newOp.Id);
+            if (newOp.ContactLastName__c != oldOp.ContactLastName__c) {
+                Contact con;
+                if (newOp.ContactLastName__c.contains(oldOp.ContactLastName__c) || oldOp.ContactLastName__c.contains(newOp.ContactLastName__c)) {
+                    con = new Contact(Id = newOp.Contact__c, LastName = newOp.ContactLastName__c);
+                    newOp.Contact__c = con.Id;
+                } else {
+                    con = new Contact(LastName = newOp.ContactLastName__c);
+                }
+                upsert con;
                 newOp.Contact__c = con.Id;
             }
         }
-
-        if (!contactsToInsert.isEmpty()){
-            insert contactsToInsert;
-        }
-        if (!contactsToUpdate.isEmpty()){
-            update contactsToUpdate;
-        }
-
-        // for (Opportunity newOp : newOppList) {
-        //     if (oppToNewContactMap.containsKey(newOp.Id)) {
-        //         newOp.Contact__c = oppToNewContactMap.get(newOp.Id);
-        //     }
-        // }
     }
 
-    public void sendEmailAfterDelete(List<Opportunity> deletedOpps) {
-        List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
-        Set<Id> ownerIds = new Set<Id>();
-        for (Opportunity opp : deletedOpps) {
-            ownerIds.add(opp.OwnerId);
+    private Set<String> getAccountNames(List<Opportunity> opps) {
+        Set<String> accountNames = new Set<String>();
+        for (Opportunity opp : opps) {
+            if (String.isNotBlank(opp.AccountName__c)) {
+                accountNames.add(opp.AccountName__c);
+            }
         }
-        Map<Id, User> ownerMap = new Map<Id, User>([SELECT Email FROM User WHERE Id IN :ownerIds]);
+        return accountNames;
+    }
 
-        
-        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE Name = 'OpportunityDeletion' LIMIT 1];
-        
-        for (Opportunity opp : deletedOpps) {
-            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-            
-            mail.setTemplateId(template.Id);
-            
-            mail.setWhatId(opp.Id);
-            mail.setToAddresses(new List<String>{ownerMap.get(opp.OwnerId).Email});
-            
-            emailsToSend.add(mail);
+    private Set<String> getContactLastNames(List<Opportunity> opps) {
+        Set<String> contactLastNames = new Set<String>();
+        for (Opportunity opp : opps) {
+            if (String.isNotBlank(opp.ContactLastName__c)) {
+                contactLastNames.add(opp.ContactLastName__c);
+            }
         }
-        
-        List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
-        System.debug(results);
+        return contactLastNames;
     }
 }
