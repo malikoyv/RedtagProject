@@ -112,23 +112,38 @@ private class OpportunityTriggerHandlerTest {
     
     @isTest
     static void testUpdateAccountsAndContacts() {
-        Opportunity opp = new Opportunity(AccountName__c = 'Old Account', ContactLastName__c = 'Old Contact');
+        Opportunity opp = new Opportunity(
+            Name = 'Test Opp',
+            StageName = 'Prospecting',
+            CloseDate = Date.today().addDays(30),
+            AccountName__c = 'Old Account',
+            ContactLastName__c = 'Old Contact'
+        );
         insert opp;
         
-        opp.AccountName__c = 'Updated Account';
-        opp.ContactLastName__c = 'Updated Contact';
+        opp = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity WHERE Id = :opp.Id];
+        
+        Opportunity updatedOpp = opp.clone(true, true, false, false);
+        updatedOpp.AccountName__c = 'Updated Account';
+        updatedOpp.ContactLastName__c = 'Updated Contact';
         
         OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
-        Map<Id, Opportunity> oldMap = new Map<Id, Opportunity>{opp.Id => opp.clone(true, true, false, false)};
+        Map<Id, Opportunity> oldMap = new Map<Id, Opportunity>{opp.Id => opp};
         
         Test.startTest();
-        handler.OnBeforeUpdate(new List<Opportunity>{opp.clone(true, true, false, false)}, new List<Opportunity>{opp}, oldMap);
+        handler.OnBeforeUpdate(new List<Opportunity>{opp}, new List<Opportunity>{updatedOpp}, oldMap);
+        update updatedOpp;
         Test.stopTest();
         
-        Account updatedAccount = [SELECT Id, Name FROM Account WHERE Name = 'Updated Account'];
-        Contact updatedContact = [SELECT Id, LastName FROM Contact WHERE LastName = 'Updated Contact'];
+        List<Account> updatedAccounts = [SELECT Id, Name FROM Account WHERE Name = 'Updated Account'];
+        List<Contact> updatedContacts = [SELECT Id, LastName FROM Contact WHERE LastName = 'Updated Contact'];
         
-        System.assertNotEquals(null, updatedAccount, 'Account should have been updated');
-        System.assertNotEquals(null, updatedContact, 'Contact should have been updated');
+        System.assertEquals(2, updatedAccounts.size());
+        System.assertEquals(2, updatedContacts.size());
+        
+        Opportunity verifyOpp = [SELECT Id, AccountId, Contact__c, Account.Name, Contact__r.LastName 
+                                FROM Opportunity WHERE Id = :updatedOpp.Id];
+        System.assertEquals('Updated Account', verifyOpp.Account.Name);
+        System.assertEquals('Updated Contact', verifyOpp.Contact__r.LastName);
     }
 }

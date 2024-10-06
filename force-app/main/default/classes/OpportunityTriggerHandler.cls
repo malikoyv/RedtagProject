@@ -78,36 +78,71 @@ public with sharing class OpportunityTriggerHandler {
         }
     }
 
-    private void updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+    public void updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        Map<String, Account> accountNameToAccount = new Map<String, Account>();
+        Set<Id> existingAccountIds = new Set<Id>();
         List<Account> accountsToUpsert = new List<Account>();
+    
         for (Opportunity newOp : newOpps) {
             Opportunity oldOp = oldOppMap.get(newOp.Id);
             if (newOp.AccountName__c != oldOp.AccountName__c) {
-                Account acc;
-                if (newOp.AccountName__c.contains(oldOp.AccountName__c) || oldOp.AccountName__c.contains(newOp.AccountName__c)) {
-                    acc = new Account(Id = newOp.AccountId, Name = newOp.AccountName__c);
-                } else {
-                    acc = new Account(Name = newOp.AccountName__c);
+                if (!accountNameToAccount.containsKey(newOp.AccountName__c)) {
+                    Account acc;
+                    if (newOp.AccountName__c.contains(oldOp.AccountName__c) || oldOp.AccountName__c.contains(newOp.AccountName__c)) {
+                        acc = new Account(Id = newOp.AccountId, Name = newOp.AccountName__c);
+                        existingAccountIds.add(newOp.AccountId);
+                    } else {
+                        acc = new Account(Name = newOp.AccountName__c);
+                    }
+                    accountNameToAccount.put(newOp.AccountName__c, acc);
+                    accountsToUpsert.add(acc);
                 }
-                upsert acc;
+            }
+        }
+    
+        if (!accountsToUpsert.isEmpty()) {
+            upsert accountsToUpsert;
+        }
+    
+        for (Opportunity newOp : newOpps) {
+            Opportunity oldOp = oldOppMap.get(newOp.Id);
+            if (newOp.AccountName__c != oldOp.AccountName__c) {
+                Account acc = accountNameToAccount.get(newOp.AccountName__c);
                 newOp.AccountId = acc.Id;
             }
         }
     }
 
     private void updateContacts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        Map<String, Contact> lastNameToContact = new Map<String, Contact>();
+        Set<Id> existingContactIds = new Set<Id>();
         List<Contact> contactsToUpsert = new List<Contact>();
+    
         for (Opportunity newOp : newOpps) {
             Opportunity oldOp = oldOppMap.get(newOp.Id);
             if (newOp.ContactLastName__c != oldOp.ContactLastName__c) {
-                Contact con;
-                if (newOp.ContactLastName__c.contains(oldOp.ContactLastName__c) || oldOp.ContactLastName__c.contains(newOp.ContactLastName__c)) {
-                    con = new Contact(Id = newOp.Contact__c, LastName = newOp.ContactLastName__c);
-                    newOp.Contact__c = con.Id;
-                } else {
-                    con = new Contact(LastName = newOp.ContactLastName__c);
+                if (!lastNameToContact.containsKey(newOp.ContactLastName__c)) {
+                    Contact con;
+                    if (newOp.ContactLastName__c.contains(oldOp.ContactLastName__c) || oldOp.ContactLastName__c.contains(newOp.ContactLastName__c)) {
+                        con = new Contact(Id = newOp.Contact__c, LastName = newOp.ContactLastName__c);
+                        existingContactIds.add(newOp.Contact__c);
+                    } else {
+                        con = new Contact(LastName = newOp.ContactLastName__c);
+                    }
+                    lastNameToContact.put(newOp.ContactLastName__c, con);
+                    contactsToUpsert.add(con);
                 }
-                upsert con;
+            }
+        }
+    
+        if (!contactsToUpsert.isEmpty()) {
+            upsert contactsToUpsert;
+        }
+    
+        for (Opportunity newOp : newOpps) {
+            Opportunity oldOp = oldOppMap.get(newOp.Id);
+            if (newOp.ContactLastName__c != oldOp.ContactLastName__c) {
+                Contact con = lastNameToContact.get(newOp.ContactLastName__c);
                 newOp.Contact__c = con.Id;
             }
         }
