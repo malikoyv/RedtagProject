@@ -15,7 +15,7 @@ trigger OpportunityTrigger on Opportunity (before insert, after insert, before u
         }
     } else if (Trigger.isDelete){
         if (Trigger.isBefore){
-            handler.OnAfterDelete(Trigger.old);
+            handler.OnBeforeDelete(Trigger.old);
         }
     }
 

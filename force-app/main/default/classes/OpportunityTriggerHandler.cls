@@ -16,7 +16,7 @@ public with sharing class OpportunityTriggerHandler {
         updateContacts(oldOpps, newOpps, oldOppMap);
     }
 
-    public void OnAfterDelete(List<Opportunity> deletedOpps) {
+    public void OnBeforeDelete(List<Opportunity> deletedOpps) {
         OpportunityEmailService.sendEmailOnDelete(deletedOpps);
     }
 

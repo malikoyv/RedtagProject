@@ -1,6 +1,5 @@
 @isTest
 private class OpportunityTriggerHandlerTest {
-
     @isTest
     static void testOnBeforeInsert() {
         Opportunity opp = new Opportunity(
@@ -61,8 +60,41 @@ private class OpportunityTriggerHandlerTest {
     }
     
     @isTest
-    static void testOnAfterDelete() {
-        //todo
+    static void testOnBeforeDelete() {
+        EmailTemplate template = new EmailTemplate(
+            Name = 'OpportunityDeletion',
+            DeveloperName = 'OpportunityDeletion',
+            TemplateType = 'text',
+            FolderId = UserInfo.getUserId(),
+            Subject = 'Opportunity Deleted: {!Opportunity.Name}',
+            Body = 'The opportunity {!Opportunity.Name} has been deleted.'
+        );
+        insert template;
+
+        List<Opportunity> oppsToDelete = new List<Opportunity>();
+        for (Integer i = 0; i < 3; i++) {
+            oppsToDelete.add(new Opportunity(
+                Name = 'Test Opp ' + i,
+                StageName = 'Prospecting',
+                CloseDate = Date.today().addDays(30),
+                AccountName__c = 'Account ' + i,
+                ContactLastName__c = 'Contact ' + i
+            ));
+        }
+        insert oppsToDelete;
+
+        Test.startTest();
+        delete oppsToDelete;
+        Test.stopTest();
+
+        Integer emailInvocations = Limits.getEmailInvocations();
+        System.assertEquals(3, emailInvocations, 'Expected 3 emails to be sent');
+
+        List<EmailMessage> sentEmails = [SELECT Subject, ToAddress FROM EmailMessage WHERE RelatedToId IN :oppsToDelete];
+        System.assertEquals(3, sentEmails.size(), 'Expected 3 email messages to be created');
+        for (EmailMessage email : sentEmails) {
+            System.assert(email.Subject.startsWith('Opportunity Deleted:'));
+        }
     }
     
     @isTest
