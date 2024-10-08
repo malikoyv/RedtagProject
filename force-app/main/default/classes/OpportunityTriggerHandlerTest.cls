@@ -1,5 +1,12 @@
 @isTest
 private class OpportunityTriggerHandlerTest {
+    @TestSetup
+    static void setup(){
+        
+    }
+
+
+    // create class testdatafactory
     @isTest
     static void testOnBeforeInsert() {
         Opportunity opp = new Opportunity(
@@ -102,7 +109,7 @@ private class OpportunityTriggerHandlerTest {
         OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
         List<Opportunity> opps = new List<Opportunity>{
             new Opportunity(AccountName__c = 'Test Account'),
-            new Opportunity()
+            new Opportunity() // tofix
         };
         
         Test.startTest();
@@ -170,8 +177,8 @@ private class OpportunityTriggerHandlerTest {
         List<Account> updatedAccounts = [SELECT Id, Name FROM Account WHERE Name = 'Updated Account'];
         List<Contact> updatedContacts = [SELECT Id, LastName FROM Contact WHERE LastName = 'Updated Contact'];
         
-        System.assertEquals(2, updatedAccounts.size());
         System.assertEquals(2, updatedContacts.size());
+        Assert.areEqual(2, updatedAccounts.size());
         
         Opportunity verifyOpp = [SELECT Id, AccountId, Contact__c, Account.Name, Contact__r.LastName 
                                 FROM Opportunity WHERE Id = :updatedOpp.Id];

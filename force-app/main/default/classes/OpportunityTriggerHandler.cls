@@ -5,13 +5,20 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public void OnAfterInsert(List<Opportunity> newOpps) {
-        insertAccounts(newOpps);
-        insertContacts(newOpps);
-        updateOpportunityAccountAndContactIds(newOpps);
+        insert insertAccounts(newOpps);
+        insert insertContacts(newOpps);
+        update updateOpportunityAccountAndContactIds(newOpps);
+    }
+
+    public void OnAfterUpdate(List<Opportunity> oldOpps){
+
+    }
+
+    public void OnAfterDelete(List<Opportunity> oldOpps){
+
     }
 
     public void OnBeforeUpdate(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
-        updateOpportunityDetails(newOpps);
         updateAccounts(oldOpps, newOpps, oldOppMap);
         updateContacts(oldOpps, newOpps, oldOppMap);
     }
@@ -33,23 +40,23 @@ public with sharing class OpportunityTriggerHandler {
         }
     }
 
-    private void insertAccounts(List<Opportunity> newOppList) {
+    private List<Account> insertAccounts(List<Opportunity> newOppList) {
         List<Account> accountsToAdd = new List<Account>();
-        for (Opportunity op : newOppList) {
-            accountsToAdd.add(new Account(Name = op.AccountName__c));
+        for (Opportunity opp : newOppList) {
+            accountsToAdd.add(new Account(Name = opp.AccountName__c));
         }
-        insert accountsToAdd;
+        return accountsToAdd;
     }
 
-    private void insertContacts(List<Opportunity> newOppList) {
+    private List<Contact> insertContacts(List<Opportunity> newOppList) {
         List<Contact> contactsToAdd = new List<Contact>();
-        for (Opportunity op : newOppList) {
-            contactsToAdd.add(new Contact(LastName = op.ContactLastName__c));
+        for (Opportunity opp : newOppList) {
+            contactsToAdd.add(new Contact(LastName = opp.ContactLastName__c));
         }
-        insert contactsToAdd;
+        return contactsToAdd;
     }
 
-    private void updateOpportunityAccountAndContactIds(List<Opportunity> newOppList) {
+    private List<Opportunity> updateOpportunityAccountAndContactIds(List<Opportunity> newOppList) {
         Map<String, Id> accountNameToIdMap = new Map<String, Id>();
         Map<String, Id> contactLastNameToIdMap = new Map<String, Id>();
 
@@ -73,9 +80,7 @@ public with sharing class OpportunityTriggerHandler {
             oppsToUpdate.add(oppToUpdate);
         }
 
-        if (!oppsToUpdate.isEmpty()) {
-            update oppsToUpdate;
-        }
+        return oppsToUpdate;
     }
 
     public void updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
@@ -83,18 +88,18 @@ public with sharing class OpportunityTriggerHandler {
         Set<Id> existingAccountIds = new Set<Id>();
         List<Account> accountsToUpsert = new List<Account>();
     
-        for (Opportunity newOp : newOpps) {
-            Opportunity oldOp = oldOppMap.get(newOp.Id);
-            if (newOp.AccountName__c != oldOp.AccountName__c) {
-                if (!accountNameToAccount.containsKey(newOp.AccountName__c)) {
+        for (Opportunity newOpp : newOpps) {
+            Opportunity oldOpp = oldOppMap.get(newOpp.Id);
+            if (newOpp.AccountName__c != oldOpp.AccountName__c) {
+                if (!accountNameToAccount.containsKey(newOpp.AccountName__c)) {
                     Account acc;
-                    if (newOp.AccountName__c.contains(oldOp.AccountName__c) || oldOp.AccountName__c.contains(newOp.AccountName__c)) {
-                        acc = new Account(Id = newOp.AccountId, Name = newOp.AccountName__c);
-                        existingAccountIds.add(newOp.AccountId);
+                    if (newOpp.AccountName__c.contains(oldOpp.AccountName__c) || oldOpp.AccountName__c.contains(newOpp.AccountName__c)) {
+                        acc = new Account(Id = newOpp.AccountId, Name = newOpp.AccountName__c);
+                        existingAccountIds.add(newOpp.AccountId);
                     } else {
-                        acc = new Account(Name = newOp.AccountName__c);
+                        acc = new Account(Name = newOpp.AccountName__c);
                     }
-                    accountNameToAccount.put(newOp.AccountName__c, acc);
+                    accountNameToAccount.put(newOpp.AccountName__c, acc);
                     accountsToUpsert.add(acc);
                 }
             }
@@ -104,11 +109,11 @@ public with sharing class OpportunityTriggerHandler {
             upsert accountsToUpsert;
         }
     
-        for (Opportunity newOp : newOpps) {
-            Opportunity oldOp = oldOppMap.get(newOp.Id);
-            if (newOp.AccountName__c != oldOp.AccountName__c) {
-                Account acc = accountNameToAccount.get(newOp.AccountName__c);
-                newOp.AccountId = acc.Id;
+        for (Opportunity newOpp : newOpps) {
+            Opportunity oldOpp = oldOppMap.get(newOpp.Id);
+            if (newOpp.AccountName__c != oldOpp.AccountName__c) {
+                Account acc = accountNameToAccount.get(newOpp.AccountName__c);
+                newOpp.AccountId = acc.Id;
             }
         }
     }
@@ -118,18 +123,18 @@ public with sharing class OpportunityTriggerHandler {
         Set<Id> existingContactIds = new Set<Id>();
         List<Contact> contactsToUpsert = new List<Contact>();
     
-        for (Opportunity newOp : newOpps) {
-            Opportunity oldOp = oldOppMap.get(newOp.Id);
-            if (newOp.ContactLastName__c != oldOp.ContactLastName__c) {
-                if (!lastNameToContact.containsKey(newOp.ContactLastName__c)) {
+        for (Opportunity newOpp : newOpps) {
+            Opportunity oldOpp = oldOppMap.get(newOpp.Id);
+            if (newOpp.ContactLastName__c != oldOpp.ContactLastName__c) {
+                if (!lastNameToContact.containsKey(newOpp.ContactLastName__c)) {
                     Contact con;
-                    if (newOp.ContactLastName__c.contains(oldOp.ContactLastName__c) || oldOp.ContactLastName__c.contains(newOp.ContactLastName__c)) {
-                        con = new Contact(Id = newOp.Contact__c, LastName = newOp.ContactLastName__c);
-                        existingContactIds.add(newOp.Contact__c);
+                    if (newOpp.ContactLastName__c.contains(oldOpp.ContactLastName__c) || oldOpp.ContactLastName__c.contains(newOpp.ContactLastName__c)) {
+                        con = new Contact(Id = newOpp.Contact__c, LastName = newOpp.ContactLastName__c);
+                        existingContactIds.add(newOpp.Contact__c);
                     } else {
-                        con = new Contact(LastName = newOp.ContactLastName__c);
+                        con = new Contact(LastName = newOpp.ContactLastName__c);
                     }
-                    lastNameToContact.put(newOp.ContactLastName__c, con);
+                    lastNameToContact.put(newOpp.ContactLastName__c, con);
                     contactsToUpsert.add(con);
                 }
             }
@@ -139,11 +144,11 @@ public with sharing class OpportunityTriggerHandler {
             upsert contactsToUpsert;
         }
     
-        for (Opportunity newOp : newOpps) {
-            Opportunity oldOp = oldOppMap.get(newOp.Id);
-            if (newOp.ContactLastName__c != oldOp.ContactLastName__c) {
-                Contact con = lastNameToContact.get(newOp.ContactLastName__c);
-                newOp.Contact__c = con.Id;
+        for (Opportunity newOpp : newOpps) {
+            Opportunity oldOpp = oldOppMap.get(newOpp.Id);
+            if (newOpp.ContactLastName__c != oldOpp.ContactLastName__c) {
+                Contact con = lastNameToContact.get(newOpp.ContactLastName__c);
+                newOpp.Contact__c = con.Id;
             }
         }
     }
@@ -155,6 +160,7 @@ public with sharing class OpportunityTriggerHandler {
                 accountNames.add(opp.AccountName__c);
             }
         }
+
         return accountNames;
     }
 
@@ -165,6 +171,7 @@ public with sharing class OpportunityTriggerHandler {
                 contactLastNames.add(opp.ContactLastName__c);
             }
         }
+        
         return contactLastNames;
     }
 }

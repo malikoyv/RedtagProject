@@ -11,11 +11,14 @@ trigger OpportunityTrigger on Opportunity (before insert, after insert, before u
     } else if (Trigger.isUpdate){
         if (Trigger.isBefore){
             handler.OnBeforeUpdate(Trigger.old, Trigger.new, Trigger.oldMap);
-
+        } else if (Trigger.isAfter) {
+            handler.OnAfterUpdate(Trigger.old);
         }
     } else if (Trigger.isDelete){
         if (Trigger.isBefore){
             handler.OnBeforeDelete(Trigger.old);
+        } else if (Trigger.isAfter) {
+            handler.OnAfterDelete(Trigger.old);
         }
     }
 
