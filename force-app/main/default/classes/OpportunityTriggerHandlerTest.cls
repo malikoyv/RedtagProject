@@ -1,77 +1,94 @@
 @isTest
 private class OpportunityTriggerHandlerTest {
+    @TestSetup
+    static void setup() {
+        // Create test data
+        Opportunity opp = TestDataFactory.createOpportunity();
+        insert opp;
+    }
+
     @isTest
     static void testOnBeforeInsert() {
-        Opportunity opp = TestDataFactory.createOpportunity();
+        Opportunity opp = [SELECT Id, Name, StageName, CloseDate, AccountName__c FROM Opportunity LIMIT 1];
         
         Test.startTest();
-        insert opp;
+        OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
+        handler.OnBeforeInsert(new List<Opportunity>{opp});
         Test.stopTest();
         
-        Opportunity insertedOpp = [SELECT Id, Name, StageName, CloseDate FROM Opportunity WHERE Id = :opp.Id];
-        Assert.isTrue(insertedOpp.Name.startsWith('Test Account'));
-        Assert.areEqual('Prospecting', insertedOpp.StageName);
-        Assert.areEqual(Date.today().addDays(90), insertedOpp.CloseDate);
+        Assert.isTrue(opp.Name.startsWith('Test Account'));
+        Assert.areEqual('Prospecting', opp.StageName);
+        Assert.areEqual(Date.today().addDays(90), opp.CloseDate);
     }
 
     @isTest
     static void testOnAfterInsert() {
-        Opportunity opp = TestDataFactory.createOpportunity();
+        List<Opportunity> opps = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity];
         
+        for (Opportunity opp : opps) {
+            opp.AccountId = null;
+            opp.Contact__c = null;
+        }
+        update opps;
+
         Test.startTest();
-        insert opp;
+        OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
+        handler.OnAfterInsert(opps);
         Test.stopTest();
         
-        Opportunity insertedOpp = [SELECT Id, AccountId, Contact__c FROM Opportunity WHERE Id = :opp.Id];
-        Account insertedAccount = [SELECT Id, Name FROM Account WHERE Name = 'Test Account'];
-        Contact insertedContact = [SELECT Id, LastName FROM Contact WHERE LastName = 'Test Contact'];
+        opps = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity];
         
-        Assert.areNotEqual(null, insertedOpp.AccountId);
-        Assert.areNotEqual(null, insertedOpp.Contact__c);
-        Assert.areEqual(insertedAccount.Id, insertedOpp.AccountId);
-        Assert.areEqual(insertedContact.Id, insertedOpp.Contact__c);
+        for (Opportunity opp : opps) {
+            Assert.areNotEqual(null, opp.AccountId, 'Opportunity should be linked to an Account');
+            Assert.areNotEqual(null, opp.Contact__c, 'Opportunity should be linked to a Contact');
+            
+            Account relatedAccount = [SELECT Id, Name FROM Account WHERE Id = :opp.AccountId];
+            Contact relatedContact = [SELECT Id, LastName FROM Contact WHERE Id = :opp.Contact__c];
+            
+            Assert.areEqual(opp.AccountName__c, relatedAccount.Name, 'Account name should match');
+            Assert.areEqual(opp.ContactLastName__c, relatedContact.LastName, 'Contact last name should match');
+        }
     }
 
     @isTest
     static void testOnBeforeUpdate() {
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
+        Opportunity opp = [SELECT Id, AccountId, Contact__c, Name, AccountName__c, ContactLastName__c FROM Opportunity LIMIT 1];
         
         opp.AccountName__c = 'New Account';
         opp.ContactLastName__c = 'New Contact';
         
         Test.startTest();
+        OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
+        Map<Id, Opportunity> oldMap = new Map<Id, Opportunity>{opp.Id => opp.clone(true, true, false, false)};
+        handler.OnBeforeUpdate(new List<Opportunity>{opp}, new List<Opportunity>{opp}, oldMap);
         update opp;
         Test.stopTest();
         
-        Opportunity updatedOpp = [SELECT Id, AccountId, Contact__c, Name FROM Opportunity WHERE Id = :opp.Id];
+        opp = [SELECT Id, AccountId, Contact__c, Name FROM Opportunity WHERE Id = :opp.Id];
         Account newAccount = [SELECT Id FROM Account WHERE Name = 'New Account'];
         Contact newContact = [SELECT Id FROM Contact WHERE LastName = 'New Contact'];
         
-        Assert.isTrue(updatedOpp.Name.startsWith('New Account'));
-        Assert.areEqual(newAccount.Id, updatedOpp.AccountId);
-        Assert.areEqual(newContact.Id, updatedOpp.Contact__c);
+        Assert.isTrue(opp.Name.startsWith('New Account'));
+        Assert.areEqual(newAccount.Id, opp.AccountId);
+        Assert.areEqual(newContact.Id, opp.Contact__c);
     }
 
     @isTest
     static void testUpdateOpportunityDetails() {
-        OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
-        List<Opportunity> opps = [SELECT Id, Name, StageName, CloseDate FROM Opportunity];
-
+        Opportunity opp = [SELECT Id, Name, StageName, CloseDate, AccountName__c FROM Opportunity LIMIT 1];
+        
         Test.startTest();
-        handler.OnBeforeInsert(opps);
+        OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
+        handler.OnBeforeInsert(new List<Opportunity>{opp});
         Test.stopTest();
         
-        for (Opportunity opp : opps) {
-            Assert.areEqual('Prospecting', opp.StageName);
-            Assert.areEqual(Date.today().addDays(90), opp.CloseDate);
-        }
+        Assert.areEqual('Prospecting', opp.StageName);
+        Assert.areEqual(Date.today().addDays(90), opp.CloseDate);
     }
 
     @isTest
     static void testInsertAccountsAndContacts() {
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
+        Opportunity opp = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity LIMIT 1];
 
         Test.startTest();
         OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
@@ -84,15 +101,14 @@ private class OpportunityTriggerHandlerTest {
         Assert.areEqual(2, insertedAccounts.size());
         Assert.areEqual(2, insertedContacts.size());
         
-        Opportunity updatedOpp = [SELECT Id, AccountId, Contact__c FROM Opportunity WHERE Id = :opp.Id];
-        Assert.areNotEqual(null, updatedOpp.AccountId, 'Opportunity should be linked to an Account');
-        Assert.areNotEqual(null, updatedOpp.Contact__c, 'Opportunity should be linked to a Contact');
+        opp = [SELECT Id, AccountId, Contact__c FROM Opportunity WHERE Id = :opp.Id];
+        Assert.areNotEqual(null, opp.AccountId, 'Opportunity should be linked to an Account');
+        Assert.areNotEqual(null, opp.Contact__c, 'Opportunity should be linked to a Contact');
     }
 
     @isTest
     static void testUpdateAccountsAndContacts() {
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
+        Opportunity opp = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity LIMIT 1];
 
         Opportunity updatedOpp = opp.clone(true, true, false, false);
         updatedOpp.AccountName__c = 'Updated Account';
