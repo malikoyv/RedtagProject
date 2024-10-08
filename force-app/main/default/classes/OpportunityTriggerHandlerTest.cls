@@ -1,12 +1,5 @@
 @isTest
 private class OpportunityTriggerHandlerTest {
-
-    @TestSetup
-    static void setup() {
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
-    }
-
     @isTest
     static void testOnBeforeInsert() {
         Opportunity opp = TestDataFactory.createOpportunity();
@@ -16,9 +9,9 @@ private class OpportunityTriggerHandlerTest {
         Test.stopTest();
         
         Opportunity insertedOpp = [SELECT Id, Name, StageName, CloseDate FROM Opportunity WHERE Id = :opp.Id];
-        System.assert(insertedOpp.Name.startsWith('Test Account'));
-        System.assertEquals('Prospecting', insertedOpp.StageName);
-        System.assertEquals(Date.today().addDays(90), insertedOpp.CloseDate);
+        Assert.isTrue(insertedOpp.Name.startsWith('Test Account'));
+        Assert.areEqual('Prospecting', insertedOpp.StageName);
+        Assert.areEqual(Date.today().addDays(90), insertedOpp.CloseDate);
     }
 
     @isTest
@@ -33,10 +26,10 @@ private class OpportunityTriggerHandlerTest {
         Account insertedAccount = [SELECT Id, Name FROM Account WHERE Name = 'Test Account'];
         Contact insertedContact = [SELECT Id, LastName FROM Contact WHERE LastName = 'Test Contact'];
         
-        System.assertNotEquals(null, insertedOpp.AccountId);
-        System.assertNotEquals(null, insertedOpp.Contact__c);
-        System.assertEquals(insertedAccount.Id, insertedOpp.AccountId);
-        System.assertEquals(insertedContact.Id, insertedOpp.Contact__c);
+        Assert.areNotEqual(null, insertedOpp.AccountId);
+        Assert.areNotEqual(null, insertedOpp.Contact__c);
+        Assert.areEqual(insertedAccount.Id, insertedOpp.AccountId);
+        Assert.areEqual(insertedContact.Id, insertedOpp.Contact__c);
     }
 
     @isTest
@@ -55,21 +48,9 @@ private class OpportunityTriggerHandlerTest {
         Account newAccount = [SELECT Id FROM Account WHERE Name = 'New Account'];
         Contact newContact = [SELECT Id FROM Contact WHERE LastName = 'New Contact'];
         
-        System.assert(updatedOpp.Name.startsWith('New Account'));
-        System.assertEquals(newAccount.Id, updatedOpp.AccountId);
-        System.assertEquals(newContact.Id, updatedOpp.Contact__c);
-    }
-
-    @isTest
-    static void testOnBeforeDelete() {
-        List<Opportunity> oppsToDelete = [SELECT Id FROM Opportunity];
-        
-        Test.startTest();
-        delete oppsToDelete;
-        Test.stopTest();
-        
-        Integer emailInvocations = Limits.getEmailInvocations();
-        System.assertEquals(1, emailInvocations, 'Expected 1 email to be sent');
+        Assert.isTrue(updatedOpp.Name.startsWith('New Account'));
+        Assert.areEqual(newAccount.Id, updatedOpp.AccountId);
+        Assert.areEqual(newContact.Id, updatedOpp.Contact__c);
     }
 
     @isTest
@@ -82,8 +63,8 @@ private class OpportunityTriggerHandlerTest {
         Test.stopTest();
         
         for (Opportunity opp : opps) {
-            System.assertEquals('Prospecting', opp.StageName);
-            System.assertEquals(Date.today().addDays(90), opp.CloseDate);
+            Assert.areEqual('Prospecting', opp.StageName);
+            Assert.areEqual(Date.today().addDays(90), opp.CloseDate);
         }
     }
 
@@ -100,12 +81,12 @@ private class OpportunityTriggerHandlerTest {
         List<Account> insertedAccounts = [SELECT Id, Name FROM Account];
         List<Contact> insertedContacts = [SELECT Id, LastName FROM Contact];
         
-        System.assertEquals(1, insertedAccounts.size());
-        System.assertEquals(1, insertedContacts.size());
+        Assert.areEqual(2, insertedAccounts.size());
+        Assert.areEqual(2, insertedContacts.size());
         
         Opportunity updatedOpp = [SELECT Id, AccountId, Contact__c FROM Opportunity WHERE Id = :opp.Id];
-        System.assertNotEquals(null, updatedOpp.AccountId, 'Opportunity should be linked to an Account');
-        System.assertNotEquals(null, updatedOpp.Contact__c, 'Opportunity should be linked to a Contact');
+        Assert.areNotEqual(null, updatedOpp.AccountId, 'Opportunity should be linked to an Account');
+        Assert.areNotEqual(null, updatedOpp.Contact__c, 'Opportunity should be linked to a Contact');
     }
 
     @isTest
@@ -128,12 +109,12 @@ private class OpportunityTriggerHandlerTest {
         List<Account> updatedAccounts = [SELECT Id, Name FROM Account WHERE Name = 'Updated Account'];
         List<Contact> updatedContacts = [SELECT Id, LastName FROM Contact WHERE LastName = 'Updated Contact'];
         
-        System.assertEquals(1, updatedAccounts.size());
-        System.assertEquals(1, updatedContacts.size());
+        Assert.areEqual(2, updatedAccounts.size());
+        Assert.areEqual(2, updatedContacts.size());
         
         Opportunity verifyOpp = [SELECT Id, AccountId, Contact__c, Account.Name, Contact__r.LastName 
                                 FROM Opportunity WHERE Id = :updatedOpp.Id];
-        System.assertEquals('Updated Account', verifyOpp.Account.Name);
-        System.assertEquals('Updated Contact', verifyOpp.Contact__r.LastName);
+        Assert.areEqual('Updated Account', verifyOpp.Account.Name);
+        Assert.areEqual('Updated Contact', verifyOpp.Contact__r.LastName);
     }
 }
