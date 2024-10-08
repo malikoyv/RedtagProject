@@ -1,6 +1,6 @@
-public with sharing class OpportunityEmailService {
-    public static void sendEmailOnDelete(List<Opportunity> deletedOpps) {
-        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE Name = 'OpportunityDeletion' LIMIT 1];
+public with sharing class EmailService {
+    public static void sendEmail(List<Opportunity> deletedOpps, String templateName) {
+        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE DeveloperName = :templateName LIMIT 1];
         if (template == null) {
             System.debug('Email template not found');
             return;

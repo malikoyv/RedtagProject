@@ -19,12 +19,13 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public void OnBeforeUpdate(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+        updateOpportunityDetails(newOpps);
         updateAccounts(oldOpps, newOpps, oldOppMap);
         updateContacts(oldOpps, newOpps, oldOppMap);
     }
 
     public void OnBeforeDelete(List<Opportunity> deletedOpps) {
-        OpportunityEmailService.sendEmailOnDelete(deletedOpps);
+        EmailService.sendEmail(deletedOpps, 'OpportunityDeletion');
     }
 
     private void updateOpportunityDetails(List<Opportunity> newOppList) {
