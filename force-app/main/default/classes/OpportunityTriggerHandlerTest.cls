@@ -38,6 +38,7 @@ private class OpportunityTriggerHandlerTest {
         
         opps = [SELECT Id, AccountId, Contact__c, AccountName__c, ContactLastName__c FROM Opportunity];
         
+        // without loop but to zero elements
         for (Opportunity opp : opps) {
             Assert.areNotEqual(null, opp.AccountId, 'Opportunity should be linked to an Account');
             Assert.areNotEqual(null, opp.Contact__c, 'Opportunity should be linked to a Contact');

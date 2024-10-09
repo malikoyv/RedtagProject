@@ -5,9 +5,12 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public void OnAfterInsert(List<Opportunity> newOpps) {
-        insert insertAccounts(newOpps);
-        insert insertContacts(newOpps);
+        List<Account> accounts = insertAccounts(newOpps);
+        List<Contact> contacts =  insertContacts(newOpps);
         update updateOpportunityAccountAndContactIds(newOpps);
+
+        insert accounts;
+        insert contacts;
     }
 
     public void OnAfterUpdate(List<Opportunity> oldOpps){
@@ -20,8 +23,8 @@ public with sharing class OpportunityTriggerHandler {
 
     public void OnBeforeUpdate(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
         updateOpportunityDetails(newOpps);
-        updateAccounts(oldOpps, newOpps, oldOppMap);
-        updateContacts(oldOpps, newOpps, oldOppMap);
+        List<Account> accounts = updateAccounts(oldOpps, newOpps, oldOppMap);
+        List<Contact> contacts = updateContacts(oldOpps, newOpps, oldOppMap);
     }
 
     public void OnBeforeDelete(List<Opportunity> deletedOpps) {
@@ -46,6 +49,7 @@ public with sharing class OpportunityTriggerHandler {
         for (Opportunity opp : newOppList) {
             accountsToAdd.add(new Account(Name = opp.AccountName__c));
         }
+
         return accountsToAdd;
     }
 
@@ -84,7 +88,7 @@ public with sharing class OpportunityTriggerHandler {
         return oppsToUpdate;
     }
 
-    public void updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+    public List<Account> updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
         Map<String, Account> accountNameToAccount = new Map<String, Account>();
         Set<Id> existingAccountIds = new Set<Id>();
         List<Account> accountsToUpsert = new List<Account>();
@@ -117,9 +121,11 @@ public with sharing class OpportunityTriggerHandler {
                 newOpp.AccountId = acc.Id;
             }
         }
+
+        return accountsToUpsert;
     }
 
-    private void updateContacts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
+    private List<Contact> updateContacts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
         Map<String, Contact> lastNameToContact = new Map<String, Contact>();
         Set<Id> existingContactIds = new Set<Id>();
         List<Contact> contactsToUpsert = new List<Contact>();
@@ -144,7 +150,7 @@ public with sharing class OpportunityTriggerHandler {
         if (!contactsToUpsert.isEmpty()) {
             upsert contactsToUpsert;
         }
-    
+    //to fix
         for (Opportunity newOpp : newOpps) {
             Opportunity oldOpp = oldOppMap.get(newOpp.Id);
             if (newOpp.ContactLastName__c != oldOpp.ContactLastName__c) {
@@ -152,6 +158,8 @@ public with sharing class OpportunityTriggerHandler {
                 newOpp.Contact__c = con.Id;
             }
         }
+
+        return contactsToUpsert;
     }
 
     private Set<String> getAccountNames(List<Opportunity> opps) {

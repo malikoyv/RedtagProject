@@ -8,6 +8,7 @@ public class TestDataFactory {
             StageName = 'Qualification',
             ContactLastName__c = 'Test Contact'
         );
+        
         return opp;
     }
 
@@ -20,6 +21,7 @@ public class TestDataFactory {
             Subject = 'Opportunity Deleted: {!Opportunity.Name}',
             Body = 'The opportunity {!Opportunity.Name} has been deleted.'
         );
+
         return template;
     }
 }

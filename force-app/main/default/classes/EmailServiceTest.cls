@@ -2,18 +2,14 @@
 private class EmailServiceTest {
     @TestSetup
     static void setup(){
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
-
-        System.runAs(new User(Id=UserInfo.getUserId())) {
-            EmailTemplate emailTemplate = TestDataFactory.createEmailTemplate();
-            insert emailTemplate;
-        }
+        EmailTemplate emailTemplate = TestDataFactory.createEmailTemplate();
+        insert emailTemplate;
     }
 
     @isTest
     static void sendEmailOnOpportunity() {
-        Opportunity opp = [SELECT Id, OwnerId FROM Opportunity LIMIT 1];
+        Opportunity opp = TestDataFactory.createOpportunity();
+        insert opp;
         
         Test.startTest();
         EmailService.sendEmail(new List<Opportunity>{opp}, 'OpportunityDeletion12');
