@@ -1,7 +1,7 @@
 public with sharing class OpportunityTriggerHandler {
 
     public void OnBeforeInsert(List<Opportunity> newOpps) {
-        updateOpportunityDetails(newOpps);
+        List<Opportunity> opportunities = updateOpportunityDetails(newOpps);
     }
 
     public void OnAfterInsert(List<Opportunity> newOpps) {
@@ -11,7 +11,8 @@ public with sharing class OpportunityTriggerHandler {
         insert accounts;
         insert contacts;
 
-        update updateOpportunityAccountAndContactIds(newOpps);
+        List<Opportunity> opportunities = updateOpportunityAccountAndContactIds(newOpps);
+        update opportunities;
     }
 
     public void OnAfterUpdate(List<Opportunity> oldOpps){
@@ -23,7 +24,7 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public void OnBeforeUpdate(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
-        updateOpportunityDetails(newOpps);
+        List<Opportunity> opportunities = updateOpportunityDetails(newOpps);
         List<Account> accounts = updateAccounts(oldOpps, newOpps, oldOppMap);
         List<Contact> contacts = updateContacts(oldOpps, newOpps, oldOppMap);
     }
@@ -32,7 +33,7 @@ public with sharing class OpportunityTriggerHandler {
         EmailService.sendEmail(deletedOpps, 'OpportunityDeletion');
     }
 
-    private void updateOpportunityDetails(List<Opportunity> newOppList) {
+    private List<Opportunity> updateOpportunityDetails(List<Opportunity> newOppList) {
         for (Opportunity opp : newOppList) {
             if (opp.AccountName__c != null) {
                 opp.Name = opp.AccountName__c + ' ' + Datetime.now().format('yyyy-MM-dd');
@@ -43,6 +44,8 @@ public with sharing class OpportunityTriggerHandler {
             opp.StageName = 'Prospecting';
             opp.CloseDate = Date.today().addDays(90);
         }
+
+        return newOppList;
     }
 
     private List<Account> insertAccounts(List<Opportunity> newOppList) {
@@ -89,7 +92,7 @@ public with sharing class OpportunityTriggerHandler {
         return oppsToUpdate;
     }
 
-    private void updateRelatedRecords(
+    private List<Opportunity> updateRelatedRecords(
         List<Opportunity> newOpps,
         Map<Id, Opportunity> oldOppMap,
         Map<String, SObject> relatedRecordMap,
@@ -103,6 +106,8 @@ public with sharing class OpportunityTriggerHandler {
                 newOpp.put(relatedRecordFieldName, relatedRecord.get('Id'));
             }
         }
+
+        return newOpps;
     }
 
     public List<Account> updateAccounts(List<Opportunity> oldOpps, List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
