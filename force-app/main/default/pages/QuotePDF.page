@@ -1,0 +1,44 @@
+<apex:page renderAs="pdf" standardController="Quote">
+    <html>
+        <head>
+            <style>
+                table, th, td {
+                    border: 1px solid black;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    padding: 5px;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Quote Details</h1>
+            <p>Quote Name: {!Quote.Name}</p>
+            <p>Account Name: {!Quote.Account.Name}</p>
+            <p>Quote Contact: {!Quote.Contact.Name}</p>
+
+            <h2>Quote Line Items</h2>
+            <table>
+                <tr>
+                    <th>Product Image</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total Price</th>
+                </tr>
+                <apex:repeat value="{!Quote.QuoteLineItems}" var="lineItem">
+                    <tr>
+                        <td><img src="{!lineItem.Product2.Product_Image__c}" width="50" height="50"/></td>
+                        <td>{!lineItem.Product2.Name}</td>
+                        <td>{!lineItem.Quantity}</td>
+                        <td>{!lineItem.UnitPrice}</td>
+                        <td>{!lineItem.TotalPrice}</td>
+                    </tr>
+                </apex:repeat>
+            </table>
+        </body>
+    </html>
+</apex:page>
