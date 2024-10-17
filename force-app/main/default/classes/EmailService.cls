@@ -1,65 +1,98 @@
 public with sharing class EmailService {
 
     // Method to send emails for deleted opportunities using an email template
-    public static void sendEmail(List<Opportunity> deletedOpps, String templateName) {
-        EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE DeveloperName = :templateName LIMIT 1];
-        if (template == null) {
-            System.debug('Email template not found');
-            return;
-        }
+    public static List<Messaging.SendEmailResult> sendEmail(List<Opportunity> deletedOpps, String templateName) {
+        List<Messaging.SendEmailResult> results = new List<Messaging.SendEmailResult>();
         
-        List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
-        
-        for (Opportunity opp : deletedOpps) {
-            Messaging.SingleEmailMessage email = Messaging.renderStoredEmailTemplate(template.Id, opp.OwnerId, opp.Id);
-            email.setSaveAsActivity(false);
-            emailsToSend.add(email);
-        }
-        
-        if (!emailsToSend.isEmpty()) {
-            List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
-            for (Messaging.SendEmailResult result : results) {
-                if (!result.isSuccess()) {
-                    System.debug('Email sending failed: ' + result.getErrors()[0].getMessage());
+        try {
+            EmailTemplate template = [SELECT Id, Subject, Body FROM EmailTemplate WHERE DeveloperName = :templateName LIMIT 1];
+
+            List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+
+            for (Opportunity opp : deletedOpps) {
+                Messaging.SingleEmailMessage email = Messaging.renderStoredEmailTemplate(template.Id, opp.OwnerId, opp.Id);
+                email.setSaveAsActivity(false);
+                emailsToSend.add(email);
+            }
+
+            if (!emailsToSend.isEmpty()) {
+                results = Messaging.sendEmail(emailsToSend);
+
+                for (Messaging.SendEmailResult result : results) {
+                    if (!result.isSuccess()) {
+                        System.debug('Email sending failed: ' + result.getErrors()[0].getMessage());
+                    }
                 }
             }
+        } catch (Exception e) {
+            System.debug('Exception occurred: ' + e.getMessage());
         }
+
+        return results;
+    }
+
+    public class EmailParams {
+        @InvocableVariable(required=true)
+        public String toAddress;
+        
+        @InvocableVariable(required=true)
+        public String subject;
+        
+        @InvocableVariable(required=true)
+        public String body;
+        
+        @InvocableVariable(required=true)
+        public String attachmentName;
+        
+        @InvocableVariable(required=true)
+        public Id recordId;
     }
 
     // Method to send emails with Quote PDFs attached
-    public static void sendQuoteEmailWithPDF(List<QuotePDFController.EmailParams> paramsList) {
-        List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+   public static List<Boolean> sendEmailWithPDF(List<EmailParams> paramsList) {
+       List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+       List<Boolean> emailResults = new List<Boolean>();
 
-        for (QuotePDFController.EmailParams params : paramsList) {
-            Quote quote = [SELECT Id, Name FROM Quote WHERE Id = :params.quoteId LIMIT 1];
+       for (EmailParams params : paramsList) {
+           try {
+               Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+               
+               email.setToAddresses(new String[] { params.toAddress });
+               email.setSubject(params.subject);
+               email.setPlainTextBody(params.body);
 
-            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+               Blob attachmentBlob = generatePDF(params.recordId);
 
-            email.setToAddresses(new String[] { params.emailAddress });
-            email.setSubject('Quote PDF: ' + quote.Name);
-            email.setPlainTextBody('Please find attached the Quote PDF for ' + quote.Name + '.'); 
+               Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
+               attachment.setFileName(params.attachmentName);
+               attachment.setBody(attachmentBlob);
+               attachment.setContentType('application/pdf');
+               email.setFileAttachments(new Messaging.EmailFileAttachment[] { attachment });
 
-            Blob pdfBlob = generatePDF(params.quoteId);
+               emailsToSend.add(email);
+           } catch (Exception e) {
+               emailResults.add(false);
+               System.debug('Error while preparing email: ' + e.getMessage());
+           }
+       }
 
-            Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
-            attachment.setFileName(quote.Name + '.pdf');
-            attachment.setBody(pdfBlob);
-            attachment.setContentType('application/pdf');
-            email.setFileAttachments(new Messaging.EmailFileAttachment[] { attachment });
+       if (!emailsToSend.isEmpty()) {
+           List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
+           
+           for (Integer i = 0; i < results.size(); i++) {
+               Messaging.SendEmailResult result = results[i];
+               if (result.isSuccess()) {
+                   emailResults.add(true);
+               } else {
+                   emailResults.add(false);
+               }
+           }
+       }
 
-            emailsToSend.add(email);
-        }
+       return emailResults;
+   }
 
-        if (!emailsToSend.isEmpty()) {
-            List<Messaging.SendEmailResult> results = Messaging.sendEmail(emailsToSend);
-            for (Messaging.SendEmailResult result : results) {
-                if (!result.isSuccess()) {
-                    System.debug('Email sending failed: ' + result.getErrors()[0].getMessage());
-                }
-            }
-        }
-    }
-
+    // Private helper method to generate PDF based on a Quote
     private static Blob generatePDF(Id quoteId) {
         PageReference pdfPage = Page.QuotePDF;
         pdfPage.getParameters().put('id', quoteId);

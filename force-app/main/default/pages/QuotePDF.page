@@ -2,15 +2,13 @@
     <html>
         <head>
             <style>
-                table, th, td {
+                table, th, td, tr {
                     border: 1px solid black;
                     border-collapse: collapse;
                     padding: 10px;
                     text-align: left;
                 }
-                th {
-                    background-color: #f2f2f2;
-                }
+            
                 h1, h2 {
                     font-family: Arial, sans-serif;
                 }
@@ -29,6 +27,9 @@
                 }
                 .signature-line {
                     margin-top: 20px; 
+                }
+                .signature-section p {
+                    margin: 5px 0;
                 }
             </style>
         </head>
@@ -52,7 +53,7 @@
 
             <h2>Quote Line Items</h2>
 
-            <table style="width:100%;">
+            <table style="width:100%;" border="1px solid black">
                 <tr>
                     <th>Product Image</th>
                     <th>Product Name</th>
@@ -96,8 +97,9 @@
             </div>
 
             <div class="signature-section">
-                <p>Signature: {!Quote.Contact.Name}</p>
-                <p>Date: _____________________________</p>
+                <p>Signature: ____________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Date: ________________________</p>
+                <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{!Quote.Contact.Name}</p>
             </div>
         </body>
     </html>
