@@ -5,23 +5,57 @@
                 table, th, td {
                     border: 1px solid black;
                     border-collapse: collapse;
-                }
-                th, td {
-                    padding: 5px;
+                    padding: 10px;
+                    text-align: left;
                 }
                 th {
                     background-color: #f2f2f2;
+                }
+                h1, h2 {
+                    font-family: Arial, sans-serif;
+                }
+                .policy-section {
+                    margin-top: 50px;
+                    font-size: 12px;
+                    line-height: 1.5;
+                }
+                .policy-title {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+                .signature-section {
+                    margin-top: 50px;
+                    font-size: 14px;
+                }
+                .signature-line {
+                    margin-top: 20px;   
+                }
+                .page-break {
+                    page-break-before: always;
                 }
             </style>
         </head>
         <body>
             <h1>Quote Details</h1>
-            <p>Quote Name: {!Quote.Name}</p>
-            <p>Account Name: {!Quote.Account.Name}</p>
-            <p>Quote Contact: {!Quote.Contact.Name}</p>
+
+            <table style="width:100%; margin-bottom: 20px;">
+                <tr>
+                    <th>Quote Name</th>
+                    <td>{!Quote.Name}</td>
+                </tr>
+                <tr>
+                    <th>Account Name</th>
+                    <td>{!Quote.Account.Name}</td>
+                </tr>
+                <tr>
+                    <th>Quote Contact</th>
+                    <td>{!Quote.Contact.Name}</td>
+                </tr>
+            </table>
 
             <h2>Quote Line Items</h2>
-            <table>
+
+            <table style="width:100%;">
                 <tr>
                     <th>Product Image</th>
                     <th>Product Name</th>
@@ -31,7 +65,7 @@
                 </tr>
                 <apex:repeat value="{!Quote.QuoteLineItems}" var="lineItem">
                     <tr>
-                        <td><img src="{!lineItem.Product2.Product_Image__c}" width="50" height="50"/></td>
+                        <td><img src="{!lineItem.Product2.Product_Image__c}" width="50" height="50" alt="Product Image"/></td>
                         <td>{!lineItem.Product2.Name}</td>
                         <td>{!lineItem.Quantity}</td>
                         <td>{!lineItem.UnitPrice}</td>
@@ -39,6 +73,37 @@
                     </tr>
                 </apex:repeat>
             </table>
+
+            <div class="page-break"></div>
+
+            <div class="policy-section">
+                <h2>Customer Policy for Quote &amp; Sales Agreement</h2>
+                <p class="policy-title">1. Pricing &amp; Validity</p>
+                <p>All prices mentioned in this quote are exclusive of applicable taxes, including VAT or sales tax, unless stated otherwise. The prices quoted are valid for a period of 30 days from the date of this document. After this period, prices are subject to change without prior notice.</p>
+                
+                <p class="policy-title">2. Payment Terms</p>
+                <p>Full payment is required within 30 days of the invoice date, unless otherwise agreed upon in writing. Payment should be made via bank transfer, credit card, or any other agreed-upon method. Late payments may incur interest charges at the rate of 1.5% per month, or the highest rate permissible by law, whichever is lower.</p>
+                
+                <p class="policy-title">3. Delivery Terms</p>
+                <p>The estimated delivery date for products and services will be communicated upon acceptance of the order. Delivery times are estimates only and subject to product availability, shipping delays, or unforeseen circumstances. Any delays in delivery do not entitle the customer to compensation or cancellation of the order.</p>
+                
+                <p class="policy-title">4. Warranty &amp; Returns</p>
+                <p>All products are covered by a limited warranty as specified by the manufacturer, for a period of 12 months from the date of purchase, unless otherwise stated. Products may only be returned within 14 days from the date of delivery, provided that they are in their original condition and packaging. Customized or special-order items are non-refundable unless defective.</p>
+                
+                <p class="policy-title">5. Cancellations &amp; Modifications</p>
+                <p>Orders may be canceled or modified within 48 hours of placement without any penalty. After this period, cancellations will incur a restocking fee of 10% of the total order value. Requests for modifications to the order may result in adjustments to pricing and delivery timelines.</p>
+                
+                <p class="policy-title">6. Liability Limitations</p>
+                <p>Our liability for any claim arising from the purchase or use of our products is limited to the amount paid by the customer for the specific products giving rise to the claim. Under no circumstances will we be liable for indirect, incidental, or consequential damages arising from the use or inability to use our products.</p>
+                
+                <p class="policy-title">7. Customer Responsibility</p>
+                <p>The customer is responsible for ensuring the accuracy of the information provided during the ordering process. Any discrepancies or errors in the quote or order are to be brought to our attention within 48 hours. By accepting this quote and placing an order, the customer acknowledges they have read and understood these terms and conditions.</p>
+            </div>
+
+            <div class="signature-section">
+                <p>Signature: {!Quote.Contact.Name}</p>
+                <p>Date: _____________________________</p>
+            </div>
         </body>
     </html>
 </apex:page>
