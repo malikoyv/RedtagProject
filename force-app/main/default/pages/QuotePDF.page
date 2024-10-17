@@ -28,10 +28,7 @@
                     font-size: 14px;
                 }
                 .signature-line {
-                    margin-top: 20px;   
-                }
-                .page-break {
-                    page-break-before: always;
+                    margin-top: 20px; 
                 }
             </style>
         </head>
@@ -74,9 +71,7 @@
                 </apex:repeat>
             </table>
 
-            <div class="page-break"></div>
-
-            <div class="policy-section">
+            <div class="policy-section" style="page-break-before:always">
                 <h2>Customer Policy for Quote &amp; Sales Agreement</h2>
                 <p class="policy-title">1. Pricing &amp; Validity</p>
                 <p>All prices mentioned in this quote are exclusive of applicable taxes, including VAT or sales tax, unless stated otherwise. The prices quoted are valid for a period of 30 days from the date of this document. After this period, prices are subject to change without prior notice.</p>
