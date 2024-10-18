@@ -23,7 +23,9 @@ public class TestDataFactory {
             Name = 'Test Opportunity',
             CloseDate = Date.today().addDays(30),
             StageName = 'Qualification',
-            AccountId = accountId
+            AccountId = accountId,
+            ContactLastName__c = 'test contact',
+            AccountName__c = 'test account'
         );
         insert opp;
         return opp;
@@ -42,19 +44,19 @@ public class TestDataFactory {
         return template;
     }
 
-    public static Quote createQuote(Id accountId, Id contactId) {
+    public static Quote createQuote(Id opportunityId, Id contactId) {
         Quote quote = new Quote(
+            OpportunityId = opportunityId,
             Name = 'Test Quote',
             ContactId = contactId,
             Status = 'Draft'
         );
         insert quote;
-
         return quote;
     }
 
-    public static EmailService.EmailParams createEmailParams(Id quoteId) {
-        EmailService.EmailParams params = new EmailService.EmailParams();
+    public static QuotePDFController.EmailParams createEmailParams(Id quoteId) {
+        QuotePDFController.EmailParams params = new QuotePDFController.EmailParams();
         params.toAddress = 'test@example.com';
         params.subject = 'Test Quote PDF';
         params.body = 'Please find the attached quote PDF.';

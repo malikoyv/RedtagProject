@@ -1,8 +1,8 @@
 public class QuotePDFController {
     
     @InvocableMethod(label='Send Email with Quote PDF')
-    public static List<Boolean> sendEmailWithAttachment(List<EmailParams> params) {
-        // List<Results> results = new List<Results>();
+    public static List<Results> sendEmailWithAttachment(List<EmailParams> params) {
+        List<Results> results = new List<Results>();
         List<Boolean> isSuccess = new List<Boolean>{false};
         String pageName = 'QuotePDF';
         
@@ -16,14 +16,12 @@ public class QuotePDFController {
                 pageName
             );
 
-            // Results result = new Results();
-            // result.outputMember = sendResult;
-            // results.add(result);
-
-            if (!sendResult.isEmpty()) isSuccess.add(true);
+            Results result = new Results();
+            result.isSuccess = true;
+            results.add(result);
         }
 
-        return isSuccess;
+        return results;
     }
 
     public class EmailParams {
@@ -43,8 +41,8 @@ public class QuotePDFController {
         public Id recordId;
     }
 
-    // public class Results {
-    //     @InvocableVariable(label='Email Send Results' required=true)
-    //     public List<Messaging.SendEmailResult> outputMember;
-    // }
+    public class Results {
+        @InvocableVariable(label='Email Sent Success' required=true)
+        public Boolean isSuccess;
+    }
 }

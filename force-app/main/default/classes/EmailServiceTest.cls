@@ -1,40 +1,60 @@
-@isTest
+@IsTest
 private class EmailServiceTest {
     @TestSetup
-    static void setup(){
-        EmailTemplate emailTemplate = TestDataFactory.createEmailTemplate();
-        insert emailTemplate;
-    }
+    static void setup() {
+        // Create test data
 
-    @isTest
-    static void sendEmailOnOpportunity() {
-        Opportunity opp = TestDataFactory.createOpportunity();
-        insert opp;
+        Account testAccount = TestDataFactory.createAccount();
+        Opportunity testOpp = TestDataFactory.createOpportunity(testAccount.Id);
+                
+    }
+    
+    @IsTest
+    static void testSendEmail() {
+        // Create email template
+        EmailTemplate testTemplate = TestDataFactory.createEmailTemplate();
+
+        Opportunity testOpp = [SELECT Id, OwnerId FROM Opportunity WHERE AccountName__c = 'test account' LIMIT 1];
         
         Test.startTest();
-        EmailService.sendEmail(new List<Opportunity>{opp}, 'OpportunityDeletion12');
+        List<Messaging.SendEmailResult> results = EmailService.sendEmail(new List<Opportunity>{testOpp}, 'OpportunityDeletion12');
         Test.stopTest();
-
-        Integer emailInvocations = Limits.getEmailInvocations();
-        System.assertEquals(1, emailInvocations, 'Expected 1 email to be sent');
+        
+        System.assertEquals(1, results.size());
+        System.assert(results[0].isSuccess());
     }
     
     @IsTest
     static void testSendEmailWithPDF() {
-        Account testAccount = TestDataFactory.createAccount();
-        Contact testContact = TestDataFactory.createContact(testAccount.Id);
-        Opportunity testOpportunity = TestDataFactory.createOpportunity(testAccount.Id);
-        Quote testQuote = TestDataFactory.createQuote(testAccount.Id, testContact.Id);
-
-        List<EmailService.EmailParams> paramsList = new List<EmailService.EmailParams>{
-            TestDataFactory.createEmailParams(testQuote.Id)
-        };
+        Opportunity testOpp = [SELECT Id FROM Opportunity WHERE AccountName__c = 'test account' LIMIT 1];
         
         Test.startTest();
-        List<Boolean> results = EmailService.sendEmailWithPDF(paramsList);
+        Test.setCurrentPage(Page.QuotePDF);
+        
+        List<Messaging.SendEmailResult> results = EmailService.sendEmailWithPDF(
+            testOpp.Id,
+            'test@example.com',
+            'Test Subject',
+            'Test Body',
+            'TestQuote.pdf',
+            'QuotePDF'
+        );
         Test.stopTest();
         
         System.assertEquals(1, results.size());
-        System.assert(results[0]);
+        System.assert(results[0].isSuccess());
+    }
+    
+    @IsTest
+    static void testGeneratePDF() {
+        Opportunity testOpp = [SELECT Id FROM Opportunity WHERE AccountName__c = 'test account' LIMIT 1];
+        
+        Test.startTest();
+        Test.setCurrentPage(Page.QuotePDF);
+        Blob pdfBlob = EmailService.generatePDF(testOpp.Id, 'QuotePDF');
+        Test.stopTest();
+        
+        System.assertNotEquals(null, pdfBlob);
+        System.assert(pdfBlob.size() > 0);
     }
 }

@@ -1,26 +1,36 @@
 @IsTest
-public class QuotePDFControllerTest {
+private class QuotePDFControllerTest {
     @TestSetup
-    static void makeData(){
-        
-    }
-    
-    @IsTest
-    static void testSendEmailWithAttachment() {
+    static void setup(){
         Account testAccount = TestDataFactory.createAccount();
         Contact testContact = TestDataFactory.createContact(testAccount.Id);
-        Opportunity testOpportunity = TestDataFactory.createOpportunity(testAccount.Id);
-        Quote testQuote = TestDataFactory.createQuote(testAccount.Id, testContact.Id);
+        Opportunity testOpp = TestDataFactory.createOpportunity(testAccount.Id);
+        TestDataFactory.createQuote(testOpp.Id, testContact.Id);
+    }
 
-        List<EmailService.EmailParams> paramsList = new List<EmailService.EmailParams>{
-            TestDataFactory.createEmailParams(testQuote.Id)
-        };
+    @IsTest
+    static void testSendEmailWithAttachment() {
+        Quote testQuote = [SELECT Id FROM Quote LIMIT 1];
+        QuotePDFController.EmailParams emailParams = TestDataFactory.createEmailParams(testQuote.Id);
         
         Test.startTest();
-        List<Boolean> results = QuotePDFController.sendEmailWithAttachment(paramsList);
+        Test.setMock(HttpCalloutMock.class, new EmailServiceMock());
+        
+        List<QuotePDFController.Results> results = QuotePDFController.sendEmailWithAttachment(new List<QuotePDFController.EmailParams>{emailParams});
+        
         Test.stopTest();
         
         System.assertEquals(1, results.size());
-        System.assert(results[0]);
+        System.assert(results[0].isSuccess);
+    }
+    
+    // Mock class for EmailService
+    private class EmailServiceMock implements HttpCalloutMock {
+        public HTTPResponse respond(HTTPRequest req) {
+            HTTPResponse res = new HTTPResponse();
+            res.setBody('{"success": true}');
+            res.setStatusCode(200);
+            return res;
+        }
     }
 }
