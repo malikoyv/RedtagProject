@@ -1,0 +1,6 @@
+<aura:documentation>
+	<aura:description>Documentation</aura:description>
+	<aura:example name="Opportunity Management" ref="opportunityManagement" label="Opportunity Management">
+		Description
+	</aura:example>
+</aura:documentation>

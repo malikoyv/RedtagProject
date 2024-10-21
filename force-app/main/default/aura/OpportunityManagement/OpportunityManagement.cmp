@@ -1,0 +1,49 @@
+<aura:component controller="OpportunityManagementController" implements="flexipage:availableForAllPageTypes,force:appHostable" access="global">
+    <aura:attribute name="opportunity" type="Opportunity" default="{'sobjectType': 'Opportunity'}" />
+    <aura:attribute name="account" type="Account" default="{'sobjectType': 'Account'}" />
+    <aura:attribute name="contact" type="Contact" default="{'sobjectType': 'Contact'}" />
+    <aura:attribute name="opportunityProducts" type="List" default="[]" />
+    <aura:attribute name="productOptions" type="List" />
+    <aura:attribute name="selectedProduct" type="String" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <lightning:card title="Create Opportunity">
+        <div class="slds-p-around_medium">
+            <lightning:input aura:id="opportunityName" label="Opportunity Name" value="{!v.opportunity.Name}" required="true" />
+            <lightning:input aura:id="accountName" label="Account Name" value="{!v.opportunity.AccountName__c}" required="true" />
+            <lightning:input aura:id="contactLastName" label="Contact Last Name" value="{!v.opportunity.ContactLastName__c}" required="true" />
+
+            <lightning:select label="Select Product" value="{!v.selectedProduct}">
+                <aura:iteration items="{!v.productOptions}" var="product">
+                    <option value="{!product.value}">{!product.label}</option>
+                </aura:iteration>
+            </lightning:select>
+
+            <lightning:button label="Add Product" onclick="{!c.addProduct}" />
+
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+                    <tr>
+                        <th scope="col"><div class="slds-truncate">Product Name</div></th>
+                        <th scope="col"><div class="slds-truncate">Quantity</div></th>
+                        <th scope="col"><div class="slds-truncate">Unit Price</div></th>
+                        <th scope="col"><div class="slds-truncate">Actions</div></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <aura:iteration items="{!v.opportunityProducts}" var="product" indexVar="index">
+                        <tr>
+                            <td><div class="slds-truncate">{!product.Name}</div></td>
+                            <td><lightning:input type="number" value="{!product.Quantity}" /></td>
+                            <td><lightning:input type="number" value="{!product.UnitPrice}" /></td>
+                            <td><lightning:button label="Delete" value="{!index}" onclick="{!c.deleteProduct}" /></td>
+                        </tr>
+                    </aura:iteration>
+                </tbody>
+            </table>
+
+            <lightning:button label="Save" variant="brand" onclick="{!c.saveOpportunity}" />
+        </div>
+    </lightning:card>
+</aura:component>
