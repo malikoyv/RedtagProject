@@ -65,4 +65,26 @@ public class TestDataFactory {
         
         return params;
     }
+
+    public static Product2 createProduct(String name){
+        Product2 product = new Product2(
+            Name = name,
+            ProductCode = 'TestProduct',
+            IsActive = true
+        );
+        insert product;
+
+        return product;
+    }
+
+    public static Pricebook2 createPricebook(String name){
+        Pricebook2 pricebook = new Pricebook2(
+            Name = name,
+            IsActive = true
+        );
+        insert pricebook;
+
+        return pricebook;
+    }
+
 }

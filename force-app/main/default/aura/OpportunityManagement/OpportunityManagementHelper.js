@@ -14,6 +14,8 @@
         });
 
         action.setCallback(this, function (response) {
+            console.log(response);
+            console.log(response.getError());
             let state = response.getState();
             if (state === "SUCCESS") {
                 let toastEvent = $A.get("e.force:showToast");
@@ -46,12 +48,17 @@
 
         let product = productOptions.find(p => p.value === selectedProduct);
         if (product) {
-            opportunityProducts.push({
-                Product2Id: product.value,
-                Name: product.label,
-                Quantity: 1,
-                UnitPrice: 0
-            });
+            let existingProduct = opportunityProducts.find(p => p.Product2Id === product.value);
+            if (existingProduct) {
+                existingProduct.Quantity++;
+            } else {
+                opportunityProducts.push({
+                    Product2Id: product.value,
+                    Name: product.label,
+                    Quantity: 1,
+                    UnitPrice: 0
+                });
+            }
             component.set("v.opportunityProducts", opportunityProducts);
         }
     },
