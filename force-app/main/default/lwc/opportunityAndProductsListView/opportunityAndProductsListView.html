@@ -1,0 +1,23 @@
+<template>
+    <lightning-card title = 'Custom Opportunity List View'>
+        <div slot="actions">
+            <lightning-button label="Delete Selected Opportunities" onclick={deleteSelectedOpportunities}></lightning-button>
+        </div>
+        <div class="slds-card__body_inner">
+            <p>Selected Opportunities: {selectedOpportunitiesLen}</p>
+
+            <div class="slds-grid slds-gutters slds-p-bottom_x-small slds-p-left_x-small">
+                <lightning-input type="search" onchange={handleSearch}></lightning-input>
+            </div>
+
+            <lightning-datatable 
+                key-field="id" 
+                data={opportunities}
+                columns={cols}
+                onrowselection={handleRowSelection}
+                onrowaction={handleRowAction}>
+            
+            </lightning-datatable>
+        </div>
+    </lightning-card>
+</template>
