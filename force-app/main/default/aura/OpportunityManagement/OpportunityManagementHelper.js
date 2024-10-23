@@ -14,8 +14,6 @@
         });
 
         action.setCallback(this, function (response) {
-            console.log(response);
-            console.log(response.getError());
             let state = response.getState();
             if (state === "SUCCESS") {
                 let toastEvent = $A.get("e.force:showToast");
@@ -25,6 +23,8 @@
                     "type": "success"
                 });
                 toastEvent.fire();
+                
+                this.clearForm(component);
             } else {
                 let errors = response.getError();
                 let errorMessage = errors[0] && errors[0].message ? errors[0].message : "Unknown error";
@@ -39,6 +39,38 @@
         });
 
         $A.enqueueAction(action);
+    },
+
+    clearForm: function(component) {
+        component.set("v.opportunity", {
+            'sobjectType': 'Opportunity',
+            'Name': '',
+            'AccountName__c': '',
+            'ContactLastName__c': ''
+        });
+
+        component.set("v.account", {
+            'sobjectType': 'Account'
+        });
+
+        component.set("v.contact", {
+            'sobjectType': 'Contact'
+        });
+
+        component.set("v.opportunityProducts", []);
+
+        component.set("v.selectedProduct", '');
+
+        let inputFields = component.find('opportunityName');
+        if (Array.isArray(inputFields)) {
+            inputFields.forEach(field => {
+                field.setCustomValidity('');
+                field.reportValidity();
+            });
+        } else if (inputFields) {
+            inputFields.setCustomValidity('');
+            inputFields.reportValidity();
+        }
     },
 
     addProduct: function (component) {

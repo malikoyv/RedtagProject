@@ -5,45 +5,112 @@
     <aura:attribute name="opportunityProducts" type="List" default="[]" />
     <aura:attribute name="productOptions" type="List" />
     <aura:attribute name="selectedProduct" type="String" />
-
+    
     <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
-
+    
     <lightning:card title="Create Opportunity">
-        <div class="slds-p-around_medium">
-            <lightning:input aura:id="opportunityName" label="Opportunity Name" value="{!v.opportunity.Name}" required="true" />
-            <lightning:input aura:id="accountName" label="Account Name" value="{!v.opportunity.AccountName__c}" required="true" />
-            <lightning:input aura:id="contactLastName" label="Contact Last Name" value="{!v.opportunity.ContactLastName__c}" required="true" />
-
-            <lightning:select label="Select Product" value="{!v.selectedProduct}">
-                <aura:iteration items="{!v.productOptions}" var="product">
-                    <option value="{!product.value}">{!product.label}</option>
-                </aura:iteration>
-            </lightning:select>
-
-            <lightning:button label="Add Product" onclick="{!c.addProduct}" />
-
-            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
-                <thead>
-                    <tr>
-                        <th scope="col"><div class="slds-truncate">Product Name</div></th>
-                        <th scope="col"><div class="slds-truncate">Quantity</div></th>
-                        <th scope="col"><div class="slds-truncate">Unit Price</div></th>
-                        <th scope="col"><div class="slds-truncate">Actions</div></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <aura:iteration items="{!v.opportunityProducts}" var="product" indexVar="index">
-                        <tr>
-                            <td><div class="slds-truncate">{!product.Name}</div></td>
-                            <td><lightning:input type="number" value="{!product.Quantity}" /></td>
-                            <td><lightning:input type="number" value="{!product.UnitPrice}" /></td>
-                            <td><lightning:button label="Delete" value="{!index}" onclick="{!c.deleteProduct}" /></td>
+        <div class="slds-p-around_large">
+            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_medium">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_medium">
+                    <lightning:input aura:id="opportunityName" 
+                                   label="Opportunity Name" 
+                                   value="{!v.opportunity.Name}" 
+                                   required="true"
+                                   class="slds-m-bottom_small" />
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_medium">
+                    <lightning:input aura:id="accountName" 
+                                   label="Account Name" 
+                                   value="{!v.opportunity.AccountName__c}" 
+                                   required="true"
+                                   class="slds-m-bottom_small" />
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_medium">
+                    <lightning:input aura:id="contactLastName" 
+                                   label="Contact Last Name" 
+                                   value="{!v.opportunity.ContactLastName__c}" 
+                                   required="true"
+                                   class="slds-m-bottom_small" />
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-horizontal_medium">
+                    <lightning:select label="Select Product" 
+                                    value="{!v.selectedProduct}"
+                                    class="slds-m-bottom_small">
+                        <aura:iteration items="{!v.productOptions}" var="product">
+                            <option value="{!product.value}">{!product.label}</option>
+                        </aura:iteration>
+                    </lightning:select>
+                </div>
+            </div>
+            
+            <div class="slds-text-align_center slds-m-bottom_medium">
+                <lightning:button label="Add Product" 
+                                onclick="{!c.addProduct}"
+                                variant="neutral"
+                                class="slds-m-around_medium" />
+            </div>
+            
+            <div class="slds-scrollable_x">
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-max-medium-table_stacked">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th scope="col" class="slds-text-title_caps">
+                                <div class="slds-truncate">Product Name</div>
+                            </th>
+                            <th scope="col" class="slds-text-title_caps" style="width: 20%;">
+                                <div class="slds-truncate">Quantity</div>
+                            </th>
+                            <th scope="col" class="slds-text-title_caps" style="width: 20%;">
+                                <div class="slds-truncate">Unit Price</div>
+                            </th>
+                            <th scope="col" class="slds-text-title_caps" style="width: 15%;">
+                                <div class="slds-truncate">Actions</div>
+                            </th>
                         </tr>
-                    </aura:iteration>
-                </tbody>
-            </table>
-
-            <lightning:button label="Save" variant="brand" onclick="{!c.saveOpportunity}" />
+                    </thead>
+                    <tbody>
+                        <aura:iteration items="{!v.opportunityProducts}" var="product" indexVar="index">
+                            <tr>
+                                <td>
+                                    <div class="slds-truncate">{!product.Name}</div>
+                                </td>
+                                <td>
+                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                        <lightning:input type="number" 
+                                                       value="{!product.Quantity}"
+                                                       variant="label-hidden"
+                                                       class="slds-text-align_center" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                        <lightning:input type="number" 
+                                                       formatter="currency"
+                                                       step="0.01"
+                                                       value="{!product.UnitPrice}"
+                                                       variant="label-hidden"
+                                                       class="slds-text-align_center" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <lightning:button label="Delete" 
+                                                    value="{!index}" 
+                                                    onclick="{!c.deleteProduct}"
+                                                    variant="destructive-text"
+                                                    class="slds-button_stretch" />
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="slds-text-align_center slds-m-top_large">
+                <lightning:button label="Save" 
+                                variant="brand" 
+                                onclick="{!c.saveOpportunity}"
+                                class="slds-m-around_medium" />
+            </div>
         </div>
     </lightning:card>
 </aura:component>
