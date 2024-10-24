@@ -1,155 +1,237 @@
 import { LightningElement, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getOpportunities from '@salesforce/apex/OpportunityAndProductListViewHelper.getOpportunities';
+import getOpportunitiesWithLineItems from '@salesforce/apex/OpportunityAndProductListViewHelper.getOpportunitiesWithLineItems';
 import searchOpportunity from '@salesforce/apex/OpportunityAndProductListViewHelper.searchOpportunity';
 import deleteOpportunities from '@salesforce/apex/OpportunityAndProductListViewHelper.deleteOpportunities';
-import getAllProducts from '@salesforce/apex/OpportunityManagementController.getAllProducts';
+import deleteProducts from '@salesforce/apex/OpportunityAndProductListViewHelper.deleteProducts';
 import { refreshApex } from '@salesforce/apex';
 
-const ACTIONS = [{ label: 'Delete', name: 'delete' },
-                { label: 'Open Products', name: 'products' }];
-
-const PRODUCT_ACTIONS = [{ label: 'Delete', name: 'delete' }];
-
-const COLS = [{ label: 'Name', fieldName: 'link', type: 'url', typeAttributes: { label: { fieldName: 'Name' } } },
-            { label: 'Account', fieldName: 'accountLink', type: 'url', typeAttributes: { label: { fieldName: 'AccountName' } } },
-            { label: 'Contact', fieldName: 'contactLink', type: 'url', typeAttributes: { label: { fieldName: 'ContactName' } } },
-            { label: 'Stage', fieldName: 'StageName' },
-            { label: 'Close Date', fieldName: 'CloseDate' },
-            { fieldName: 'actions', type: 'action', typeAttributes: { rowActions: ACTIONS } }];
-
-const PRODUCT_COLS = [{ label: 'Name', fieldName: 'link', type: 'url', typeAttributes: { label: { fieldName: 'Name' } } },
-                    { label: 'Quantity', fieldName: 'quantity' },
-                    { label: 'UnitPrice', fieldName: 'unitPrice', type: 'currency' },
-                    { label: 'DiscountPrice', fieldName: 'discountPrice', type: 'currency' },
-                    { fieldName: 'actions', type: 'action', typeAttributes: { rowActions: PRODUCT_ACTIONS } }];
+const COLS = [
+    { 
+        label: 'Name', 
+        fieldName: 'link', 
+        type: 'url', 
+        typeAttributes: { 
+            label: { fieldName: 'Name' } 
+        }
+    },
+    { 
+        label: 'Account', 
+        fieldName: 'accountLink', 
+        type: 'url', 
+        typeAttributes: { 
+            label: { fieldName: 'AccountName' } 
+        }
+    },
+    { 
+        label: 'Contact', 
+        fieldName: 'contactLink', 
+        type: 'url', 
+        typeAttributes: { 
+            label: { fieldName: 'ContactName' } 
+        }
+    },
+    { label: 'Stage', fieldName: 'StageName' },
+    { label: 'Close Date', fieldName: 'CloseDate' },
+    { 
+        label: 'Quantity', 
+        fieldName: 'Quantity',
+        type: 'number',
+        hideDefaultActions: true
+    },
+    { 
+        label: 'Unit Price', 
+        fieldName: 'UnitPrice',
+        type: 'currency',
+        hideDefaultActions: true
+    },
+    { 
+        label: 'Discount Price', 
+        fieldName: 'DiscountPrice',
+        type: 'currency',
+        hideDefaultActions: true
+    },
+    {
+        type: 'action',
+        typeAttributes: { 
+            rowActions: { 
+                fieldName: 'availableActions' 
+            } 
+        }
+    }
+];
 
 export default class OpportunityAndProductsListView extends LightningElement {
     cols = COLS;
-    product_cols = PRODUCT_COLS;
     opportunities;
     wiredOpportunities;
-    selectedOpportunities;
-    baseData;
+    selectedRows = [];
     isDeleteModalOpen = false;
     isSingleDelete = false;
     selectedOpportunityId;
-
-    wiredProducts;
-    products;
-    selectedProducts;
+    selectedOpportunities = [];
+    gridExpandedRows = [];
+    productId;
+    baseData;
+    error;
 
     get selectedOpportunitiesLen() {
         if (this.selectedOpportunities == undefined) return 0;
         return this.selectedOpportunities.length;
     }
 
-    @wire(getOpportunities)
+    get showDeleteSelected() {
+        return this.selectedOpportunitiesLen > 0;
+    }
+
+    @wire(getOpportunitiesWithLineItems)
     opportunitiesWire(result) {
         this.wiredOpportunities = result;
         if (result.data) {
-            this.opportunities = result.data.map((row) => this.mapOpportunities(row));
+            this.opportunities = this.transformData(result.data);
             this.baseData = this.opportunities;
-        }
-        if (result.error) {
-            console.error(result.error);
-        }
-    }
-
-    @wire(getAllProducts)
-    productsWire(result) {
-        this.wiredProducts = result;
-        if (result.data) {
-            this.products = result.data.map((row) => this.mapProducts(row));
-            this.baseData += this.products;
-        }
-        if (result.error) {
-            console.error(result.error);
+            this.error = undefined;
+        } else if (result.error) {
+            this.error = result.error;
+            this.opportunities = [];
+            this.baseData = [];
+            this.showToast('Error', 'Error loading opportunities', 'error');
         }
     }
 
-    mapProducts(row) {
-        return {
-            ...row,
-            Name: `${row.Name}`,
-            link: `${row.Id}`,
-            quantity: `${row.Quantity}`,
-            unitPrice: `${row.Quantity}`,
-            discountPrice: `${row.Discount_Price__c}`
-        };
-    }
+    transformData(data) {
+        return data.map(opp => {
+            const actions = [
+                { label: 'Delete', name: 'delete' }
+            ];
 
-    mapOpportunities(row) {
-        return {
-            ...row,
-            Name: `${row.Name}`,
-            link: `/${row.Id}`,
-            AccountName: `${row.AccountName__c}`,
-            accountLink: `/${row.AccountId}`,
-            ContactName: `${row.ContactLastName__c}`,
-            contactLink: `/${row.ContactId}`
-        };
-    }
+            const opportunity = {
+                id: opp.Id,
+                Name: opp.Name,
+                link: `/${opp.Id}`,
+                AccountName: opp.AccountName__c,
+                accountLink: `/${opp.AccountId}`,
+                ContactName: opp.ContactLastName__c,
+                contactLink: `/${opp.ContactId}`,
+                StageName: opp.StageName,
+                CloseDate: opp.CloseDate,
+                availableActions: actions,
+                _children: []
+            };
 
-    handleRowSelection(event) {
-        this.selectedOpportunities = event.detail.selectedRows;
-    }
+            if (opp.OpportunityLineItems) {
+                opportunity._children = opp.OpportunityLineItems.map(product => ({
+                    id: product.Id,
+                    Name: product.Product2.Name,
+                    link: `/${product.Id}`,
+                    Quantity: product.Quantity,
+                    UnitPrice: product.UnitPrice,
+                    DiscountPrice: product.Discount_Price__c,
+                    availableActions: [{ label: 'Delete', name: 'delete_product' }],
+                    _children: []
+                }));
+            }
 
-    async handleSearch(event) {
-        if (event.target.value == "") {
-            this.opportunities = this.baseData;
-        } else if (event.target.value.length > 1) {
-            const searchOpportunities = await searchOpportunity({ input: event.target.value });
-            this.opportunities = searchOpportunities.map(row => this.mapOpportunities(row));
-        }
+            return opportunity;
+        });
     }
 
     handleRowAction(event) {
         const actionName = event.detail.action.name;
         const row = event.detail.row;
 
-        if (actionName === 'delete') {
-            this.selectedOpportunityId = row.Id;
-            this.isSingleDelete = true;
-            this.handleOpenDeleteModal();
+        switch (actionName) {
+            case 'delete':
+                this.selectedOpportunityId = row.id;
+                this.isSingleDelete = true;
+                this.handleOpenDeleteModal();
+                break;
+            case 'delete_product':
+                this.productId = row.id;
+                this.handleDeleteProduct();
+                break;
+            default:
+                break;
+        }
+    }
+
+    async handleSearch(event) {
+        try {
+            const searchTerm = event.target.value;
+            if (!searchTerm) {
+                this.opportunities = this.baseData;
+                return;
+            }
+            
+            if (searchTerm.length > 0) {
+                const searchResults = await searchOpportunity({ input: searchTerm });
+                this.opportunities = this.transformData(searchResults);
+            }
+        } catch (error) {
+            this.showToast('Error', 'Error performing search', 'error');
         }
     }
 
     handleOpenDeleteModal() {
+        if (!this.isSingleDelete && this.selectedOpportunitiesLen === 0) {
+            this.showToast('Warning', 'Please select opportunities to delete', 'warning');
+            return;
+        }
         this.isDeleteModalOpen = true;
     }
 
     handleCloseDeleteModal() {
         this.isDeleteModalOpen = false;
+        this.isSingleDelete = false;
+        this.selectedOpportunityId = null;
     }
 
-    handleDelete() {
-        if (this.isSingleDelete) {
-            deleteOpportunities({ ids: [this.selectedOpportunityId] }).then(() => {
-                this.showToast('Success', 'Opportunity deleted successfully', 'success');
-                refreshApex(this.wiredOpportunities);
-            }).catch(() => {
-                this.showToast('Error', 'Failed to delete Opportunity', 'error');
-            });
-        } else {
-            const idList = this.selectedOpportunities.map(row => row.Id);
-            deleteOpportunities({ ids: idList }).then(() => {
-                this.showToast('Success', 'Opportunities deleted successfully', 'success');
-                refreshApex(this.wiredOpportunities);
-            }).catch(() => {
-                this.showToast('Error', 'Failed to delete Opportunities', 'error');
-            });
+    async handleDeleteProduct() {
+        try {
+            const result = await deleteProducts({ ids: [this.productId] });
+            if (result) {
+                this.showToast('Success', 'Product deleted successfully', 'success');
+                await refreshApex(this.wiredOpportunities);
+            }
+        } catch (error) {
+            this.showToast('Error', 'Failed to delete Product', 'error');
         }
+    }
 
-        this.handleCloseDeleteModal();
+    async handleDelete() {
+        try {
+            const idsToDelete = this.isSingleDelete ? 
+                [this.selectedOpportunityId] : 
+                this.selectedOpportunities.map(row => row.id);
+
+            const result = await deleteOpportunities({ ids: idsToDelete });
+            
+            if (result) {
+                this.showToast('Success', 
+                    `${this.isSingleDelete ? 'Opportunity' : 'Opportunities'} deleted successfully`, 
+                    'success'
+                );
+                this.selectedRows = [];
+                this.selectedOpportunities = [];
+                await refreshApex(this.wiredOpportunities);
+            }
+        } catch (error) {
+            this.showToast('Error', 'Failed to delete Opportunities', 'error');
+        } finally {
+            this.handleCloseDeleteModal();
+        }
+    }
+
+    handleRowSelection(event) {
+        this.selectedRows = event.detail.selectedRows.map(row => row.id);
+        this.selectedOpportunities = event.detail.selectedRows;
     }
 
     showToast(title, message, variant) {
-        const event = new ShowToastEvent({
-            title: title,
-            message: message,
-            variant: variant,
-        });
-        this.dispatchEvent(event);
+        this.dispatchEvent(new ShowToastEvent({
+            title,
+            message,
+            variant
+        }));
     }
-}
+}   
