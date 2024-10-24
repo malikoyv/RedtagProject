@@ -1,23 +1,52 @@
 <template>
-    <lightning-card title = 'Custom Opportunity List View'>
+    <lightning-card title="Custom Opportunity List View">
         <div slot="actions">
-            <lightning-button label="Delete Selected Opportunities" onclick={deleteSelectedOpportunities}></lightning-button>
+            <lightning-button label="Delete Selected Opportunities" onclick={handleOpenDeleteModal}></lightning-button>
         </div>
         <div class="slds-card__body_inner">
-            <p>Selected Opportunities: {selectedOpportunitiesLen}</p>
+            <p style="margin: 20px">Selected Opportunities: {selectedOpportunitiesLen}</p>
 
-            <div class="slds-grid slds-gutters slds-p-bottom_x-small slds-p-left_x-small">
-                <lightning-input type="search" onchange={handleSearch}></lightning-input>
+            <div style="margin: 10px" class="slds-grid slds-gutters slds-p-bottom_x-small slds-p-left_x-small">
+                <lightning-input type="search" onchange={handleSearch} label="Search"></lightning-input>
             </div>
 
-            <lightning-datatable 
-                key-field="id" 
+            <lightning-datatable
+                key-field="id"
                 data={opportunities}
                 columns={cols}
                 onrowselection={handleRowSelection}
                 onrowaction={handleRowAction}>
-            
+            </lightning-datatable>
+
+            <lightning-datatable
+                key-field="id"
+                data={products}
+                columns={product_cols}
+                onrowselection={handleRowSelection}
+                onrowaction={handleRowAction}>
             </lightning-datatable>
         </div>
     </lightning-card>
+
+    <template if:true={isDeleteModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Confirm Deletion</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCloseDeleteModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                    </button>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p if:true={isSingleDelete}>Are you sure you want to delete this opportunity?</p>
+                    <p if:false={isSingleDelete}>Are you sure you want to delete the selected opportunities?</p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Cancel" onclick={handleCloseDeleteModal}></lightning-button>
+                    <lightning-button variant="destructive" label="Delete" onclick={handleDelete}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
 </template>
