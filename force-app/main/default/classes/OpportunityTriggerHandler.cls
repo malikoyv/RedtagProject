@@ -2,6 +2,7 @@ public with sharing class OpportunityTriggerHandler {
 
     public void OnBeforeInsert(List<Opportunity> newOpps) {
         List<Opportunity> opportunities = updateOpportunityDetails(newOpps);
+        opportunities = updateStageName(newOpps);
     }
 
     public void OnAfterInsert(List<Opportunity> newOpps) {
@@ -41,8 +42,15 @@ public with sharing class OpportunityTriggerHandler {
                 opp.Name = 'No Account ' + Datetime.now().format('yyyy-MM-dd');
             }
             
-            opp.StageName = 'Prospecting';
             opp.CloseDate = Date.today().addDays(90);
+        }
+
+        return newOppList;
+    }
+
+    private List<Opportunity> updateStageName(List<Opportunity> newOppList){
+        for (Opportunity opp : newOppList){
+            opp.StageName = 'Prospecting';
         }
 
         return newOppList;
