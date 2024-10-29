@@ -63,4 +63,26 @@ public with sharing class EmailService {
             return pdfPage.getContentAsPDF();
         }
     }
+
+    public static Messaging.SingleEmailMessage sendStatisticsEmail(Id summaryId){
+        Statistic__c summary = [SELECT Closed_Won_Opportunities__c, Closed_Lost_Opportunities__c, 
+                                Total_Opportunities__c, Last_Processing_Date__c 
+                                FROM Statistic__c WHERE Id = :summaryId LIMIT 1];
+
+        String subject = 'Opportunity Summary for Current Quarter';
+        String body = 'Opportunity Summary:\n\n' +
+                      'Closed Won Opportunities: ' + summary.Closed_Won_Opportunities__c + '\n' +
+                      'Closed Lost Opportunities: ' + summary.Closed_Lost_Opportunities__c + '\n' +
+                      'Total Opportunities: ' + summary.Total_Opportunities__c + '\n' +
+                      'Processing Date: ' + summary.Last_Processing_Date__c + '\n';
+
+        Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+        email.setToAddresses(new String[] { UserInfo.getUserEmail() });
+        email.setSubject(subject);
+        email.setPlainTextBody(body);
+
+        Messaging.sendEmail(new Messaging.SingleEmailMessage[] { email });
+
+        return email;
+    }
 }

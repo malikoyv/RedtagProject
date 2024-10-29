@@ -2,8 +2,9 @@
 private class OpportunityTriggerHandlerTest {
     @TestSetup
     static void setup() {
+        Account acc = TestDataFactory.createAccount();
         // Create test data
-        Opportunity opp = TestDataFactory.createOpportunity();
+        Opportunity opp = TestDataFactory.createOpportunity(acc.Id);
         insert opp;
     }
 
