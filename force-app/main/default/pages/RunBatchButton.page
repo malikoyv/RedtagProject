@@ -1,0 +1,5 @@
+<apex:page controller="OpportunitySummaryBatchController">
+    <apex:form>
+        <apex:commandButton value="Run Opportunity Summary Batch" action="{!runBatch}" />
+    </apex:form>
+</apex:page>
