@@ -33,10 +33,10 @@ private class OpportunityManagementControllerTest {
         List<Map<String, String>> products = OpportunityManagementController.getAllProducts();
         Test.stopTest();
         
-        System.assertEquals(5, products.size(), 'Should return 5 products');
+        Assert.areEqual(5, products.size(), 'Should return 5 products');
         for (Map<String, String> product : products) {
-            System.assert(product.containsKey('value'), 'Product should contain value key');
-            System.assert(product.containsKey('label'), 'Product should contain label key');
+            Assert.isTrue(product.containsKey('value'), 'Product should contain value key');
+            Assert.isTrue(product.containsKey('label'), 'Product should contain label key');
         }
     }
     
@@ -69,26 +69,26 @@ private class OpportunityManagementControllerTest {
         Test.stopTest();
         
         List<Account> accounts = [SELECT Id FROM Account WHERE Name = :accountName];
-        System.assertEquals(2, accounts.size(), 'Account should be created');
+        Assert.areEqual(2, accounts.size(), 'Account should be created');
         
         List<Contact> contacts = [SELECT Id FROM Contact WHERE LastName = 'Test Contact'];
-        System.assertEquals(2, contacts.size(), 'Contact should be created');
+        Assert.areEqual(2, contacts.size(), 'Contact should be created');
         
         List<Opportunity> opportunities = [
             SELECT Id, AccountId, Contact__c 
             FROM Opportunity 
             WHERE AccountName__c = :accountName
         ];
-        System.assertEquals(1, opportunities.size(), 'Opportunity should be created');
-        System.assertEquals(accounts[0].Id, opportunities[0].AccountId, 'Opportunity should be linked to Account');
-        System.assertEquals(contacts[0].Id, opportunities[0].Contact__c, 'Opportunity should be linked to Contact');
+        Assert.areEqual(1, opportunities.size(), 'Opportunity should be created');
+        Assert.areEqual(accounts[0].Id, opportunities[0].AccountId, 'Opportunity should be linked to Account');
+        Assert.areEqual(contacts[0].Id, opportunities[0].Contact__c, 'Opportunity should be linked to Contact');
         
         List<OpportunityLineItem> olis = [
             SELECT Id 
             FROM OpportunityLineItem 
             WHERE OpportunityId = :opportunities[0].Id
         ];
-        System.assertEquals(1, olis.size(), 'OpportunityLineItem should be created');
+        Assert.areEqual(1, olis.size(), 'OpportunityLineItem should be created');
     }
     
     @isTest
@@ -110,9 +110,9 @@ private class OpportunityManagementControllerTest {
             OpportunityManagementController.createOpportunityWithRelatedRecords(
                 opp, new Account(Name = existingAccountName), new Contact(), new List<OpportunityLineItem>()
             );
-            System.assert(false, 'Should have thrown an exception');
+            Assert.isTrue(false, 'Should have thrown an exception');
         } catch (Exception e) {
-            System.assert(e.getMessage().contains('Account Name should be unique.'), 
+            Assert.isTrue(e.getMessage().contains('Account Name should be unique.'), 
                          'Error message should indicate duplicate account name');
         }
         Test.stopTest();

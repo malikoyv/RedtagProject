@@ -9,22 +9,36 @@
         </div>
 
         <div class="slds-card__body_inner">
-            <p style="margin: 20px">Selected Opportunities: {selectedOpportunitiesLen}</p>
+            <p class="slds-m-around_medium">Selected Opportunities: {selectedOpportunitiesLen}</p>
 
-            <div style="margin: 10px" class="slds-grid slds-gutters slds-p-bottom_x-small slds-p-left_x-small">
+            <div class="slds-grid slds-gutters slds-p-bottom_x-small slds-p-left_x-small slds-m-around_x-small">
                 <lightning-input type="search" onchange={handleSearch} label="Search"></lightning-input>
             </div>
 
             <div class="slds-p-around_medium">
                 <lightning-tree-grid
                     columns={cols}
-                    data={opportunities}
+                    data={paginatedOpportunities}
                     key-field="id"
                     selected-rows={selectedRows}
                     expanded-rows={gridExpandedRows}
                     onrowaction={handleRowAction}
                     onrowselection={handleRowSelection}>
                 </lightning-tree-grid>
+            </div>
+
+            <div class="slds-p-around_medium slds-grid slds-grid_align-spread">
+                <lightning-button 
+                    label="Previous" 
+                    onclick={handlePreviousPage} 
+                    disabled={isFirstPage}>
+                </lightning-button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <lightning-button 
+                    label="Next" 
+                    onclick={handleNextPage} 
+                    disabled={isLastPage}>
+                </lightning-button>
             </div>
         </div>
 

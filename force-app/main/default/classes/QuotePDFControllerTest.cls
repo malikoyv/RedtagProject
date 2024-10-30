@@ -20,8 +20,8 @@ private class QuotePDFControllerTest {
         
         Test.stopTest();
         
-        System.assertEquals(1, results.size());
-        System.assert(results[0].isSuccess);
+        Assert.areEqual(1, results.size());
+        Assert.isTrue(results[0].isSuccess);
     }
     
     // Mock class for EmailService

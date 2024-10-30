@@ -16,11 +16,11 @@ private class OpportunitySummaryBatchTest {
 
         List<Statistic__c> statistics = [SELECT Closed_Won_Opportunities__c, Closed_Lost_Opportunities__c, Total_Opportunities__c
                                           FROM Statistic__c];
-        System.assertEquals(1, statistics.size(), 'One Statistic record should be created.');
+        Assert.areEqual(1, statistics.size(), 'One Statistic record should be created.');
         Statistic__c stat = statistics[0];
 
-        System.assertEquals(2, stat.Closed_Won_Opportunities__c, 'Should count 2 Closed Won opportunities.');
-        System.assertEquals(1, stat.Closed_Lost_Opportunities__c, 'Should count 1 Closed Lost opportunity.');
-        System.assertEquals(3, stat.Total_Opportunities__c, 'Total opportunities should be 3.');
+        Assert.areEqual(2, stat.Closed_Won_Opportunities__c, 'Should count 2 Closed Won opportunities.');
+        Assert.areEqual(1, stat.Closed_Lost_Opportunities__c, 'Should count 1 Closed Lost opportunity.');
+        Assert.areEqual(3, stat.Total_Opportunities__c, 'Total opportunities should be 3.');
     }
 }

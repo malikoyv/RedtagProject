@@ -20,8 +20,8 @@ private class EmailServiceTest {
         List<Messaging.SendEmailResult> results = EmailService.sendEmail(new List<Opportunity>{testOpp}, 'OpportunityDeletion12');
         Test.stopTest();
         
-        System.assertEquals(1, results.size());
-        System.assert(results[0].isSuccess());
+        Assert.areEqual(1, results.size());
+        Assert.isTrue(results[0].isSuccess());
     }
     
     @IsTest
@@ -41,8 +41,8 @@ private class EmailServiceTest {
         );
         Test.stopTest();
         
-        System.assertEquals(1, results.size());
-        System.assert(results[0].isSuccess());
+        Assert.areEqual(1, results.size());
+        Assert.isTrue(results[0].isSuccess());
     }
     
     @IsTest
@@ -54,7 +54,7 @@ private class EmailServiceTest {
         Blob pdfBlob = EmailService.generatePDF(testOpp.Id, 'QuotePDF');
         Test.stopTest();
         
-        System.assertNotEquals(null, pdfBlob);
-        System.assert(pdfBlob.size() > 0);
+        Assert.isTrueNotEquals(null, pdfBlob);
+        Assert.isTrue(pdfBlob.size() > 0);
     }
 }

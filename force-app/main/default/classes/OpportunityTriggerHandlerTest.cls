@@ -16,7 +16,6 @@ private class OpportunityTriggerHandlerTest {
         OpportunityTriggerHandler handler = new OpportunityTriggerHandler();
         handler.OnBeforeInsert(new List<Opportunity>{opp});
         Test.stopTest();
-        
         Assert.isTrue(opp.Name.startsWith('Test Account'));
         Assert.areEqual('Prospecting', opp.StageName);
         Assert.areEqual(Date.today().addDays(90), opp.CloseDate);

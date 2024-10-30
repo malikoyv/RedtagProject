@@ -10,6 +10,6 @@ private class OpportunitySummarySchedulerTest {
         Test.stopTest();
 
         List<Statistic__c> statistics = [SELECT Id FROM Statistic__c];
-        System.assertEquals(0, statistics.size(), 'No Statistic record should be created without opportunities.');
+        Assert.areEqual(0, statistics.size(), 'No Statistic record should be created without opportunities.');
     }
 }

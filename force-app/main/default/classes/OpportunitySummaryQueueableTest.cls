@@ -18,9 +18,9 @@ private class OpportunitySummaryQueueableTest {
         List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
         Test.setMock(HttpCalloutMock.class, new EmailMock(emails));
 
-        System.assertEquals(1, emails.size(), 'An email should be sent.');
-        System.assertEquals('Opportunity Summary for Current Quarter', emails[0].getSubject());
-        System.assertEquals(UserInfo.getUserEmail(), emails[0].getToAddresses()[0]);
+        Assert.areEqual(1, emails.size(), 'An email should be sent.');
+        Assert.areEqual('Opportunity Summary for Current Quarter', emails[0].getSubject());
+        Assert.areEqual(UserInfo.getUserEmail(), emails[0].getToAddresses()[0]);
     }
 
     private class EmailMock implements HttpCalloutMock {

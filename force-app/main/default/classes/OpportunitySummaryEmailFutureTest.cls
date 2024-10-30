@@ -14,7 +14,7 @@ private class OpportunitySummaryEmailFutureTest {
         Messaging.SingleEmailMessage email = EmailService.sendStatisticsEmail(summary.Id);
         Test.stopTest();
 
-        System.assertEquals('Opportunity Summary for Current Quarter', email.getSubject());
-        System.assertEquals('test@example.com', email.getToAddresses()[0]);
+        Assert.areEqual('Opportunity Summary for Current Quarter', email.getSubject());
+        Assert.areEqual('test@example.com', email.getToAddresses()[0]);
     }
 }

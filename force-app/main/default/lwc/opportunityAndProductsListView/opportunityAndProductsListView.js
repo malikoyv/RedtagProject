@@ -1,4 +1,4 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import getOpportunitiesWithLineItems from '@salesforce/apex/OpportunityAndProductListViewHelper.getOpportunitiesWithLineItems';
 import searchOpportunity from '@salesforce/apex/OpportunityAndProductListViewHelper.searchOpportunity';
@@ -72,8 +72,48 @@ export default class OpportunityAndProductsListView extends LightningElement {
     selectedOpportunities = [];
     gridExpandedRows = [];
     productId;
-    baseData;
+    baseData = [];
     error;
+
+    @track currentPage = 1;
+    @track pageSize = 10;
+    @track totalRecords = 0;
+    @track totalPages = 0;
+
+    get paginatedOpportunities() {
+        if (!this.opportunities || !this.opportunities.length) return [];
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        return this.opportunities.slice(start, end);
+    }
+
+    get isFirstPage() {
+        return this.currentPage === 1;
+    }
+
+    get isLastPage() {
+        return this.currentPage >= this.totalPages;
+    }
+
+    get pageNumbers() {
+        return `Page ${this.currentPage} of ${this.totalPages}`;
+    }
+
+    get selectedOpportunitiesLen() {
+        if (this.selectedOpportunities == undefined) return 0;
+        return this.selectedOpportunities.length;
+    }
+
+    get showDeleteSelected() {
+        return this.selectedOpportunitiesLen > 0;
+    }
+
+    get totalPages() {
+        if (!this.baseData || this.baseData.length === 0) {
+            return 0;
+        }
+        return Math.ceil(this.baseData.length / this.pageSize);
+    }
 
     get selectedOpportunitiesLen() {
         if (this.selectedOpportunities == undefined) return 0;
@@ -89,13 +129,41 @@ export default class OpportunityAndProductsListView extends LightningElement {
         this.wiredOpportunities = result;
         if (result.data) {
             this.opportunities = this.transformData(result.data);
-            this.baseData = this.opportunities;
+            this.baseData = [...this.opportunities];
+            this.updatePaginationInfo();
             this.error = undefined;
         } else if (result.error) {
             this.error = result.error;
             this.opportunities = [];
             this.baseData = [];
+            this.updatePaginationInfo();
             this.showToast('Error', 'Error loading opportunities', 'error');
+        }
+    }
+
+    updatePaginationInfo() {
+        this.totalRecords = this.opportunities ? this.opportunities.length : 0;
+        this.totalPages = Math.ceil(this.totalRecords / this.pageSize);
+        
+        // Ensure current page is valid
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages || 1;
+        }
+    }
+
+    handlePreviousPage() {
+        if (!this.isFirstPage) {
+            this.currentPage--;
+            this.selectedRows = [];
+            this.selectedOpportunities = [];
+        }
+    }
+
+    handleNextPage() {
+        if (!this.isLastPage) {
+            this.currentPage++;
+            this.selectedRows = [];
+            this.selectedOpportunities = [];
         }
     }
 
@@ -160,13 +228,14 @@ export default class OpportunityAndProductsListView extends LightningElement {
             const searchTerm = event.target.value;
             if (!searchTerm) {
                 this.opportunities = this.baseData;
-                return;
-            }
-            
-            if (searchTerm.length > 0) {
+            } else if (searchTerm.length > 0) {
                 const searchResults = await searchOpportunity({ input: searchTerm });
                 this.opportunities = this.transformData(searchResults);
             }
+            this.currentPage = 1;
+            this.updatePaginationInfo();
+            this.selectedRows = [];
+            this.selectedOpportunities = [];
         } catch (error) {
             this.showToast('Error', 'Error performing search', 'error');
         }
@@ -214,6 +283,7 @@ export default class OpportunityAndProductsListView extends LightningElement {
                 this.selectedRows = [];
                 this.selectedOpportunities = [];
                 await refreshApex(this.wiredOpportunities);
+                this.updatePaginationInfo();
             }
         } catch (error) {
             this.showToast('Error', 'Failed to delete Opportunities', 'error');
