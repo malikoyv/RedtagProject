@@ -1,6 +1,6 @@
 public class TwilioApiClient {
-    private static final String ACCOUNT_SID = 'ACb6afdea2baeb7830ba9947b1ea578f1e';
-    private static final String AUTH_TOKEN = 'd333d62f174251edbb648a694172c41f';
+    private static final String ACCOUNT_SID = 'AXXX';
+    private static final String AUTH_TOKEN = 'AXXX';
     private static final String FROM_NUMBER = '+18609680131';
 
     public static void sendSms(String toNumber, String body) {
