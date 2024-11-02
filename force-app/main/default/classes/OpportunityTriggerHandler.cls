@@ -1,5 +1,4 @@
 public with sharing class OpportunityTriggerHandler {
-
     public void OnBeforeInsert(List<Opportunity> newOpps) {
         List<Opportunity> opportunities = updateOpportunityDetails(newOpps);
         opportunities = updateStageName(newOpps);
@@ -32,6 +31,16 @@ public with sharing class OpportunityTriggerHandler {
 
     public void OnBeforeDelete(List<Opportunity> deletedOpps) {
         EmailService.sendEmail(deletedOpps, 'OpportunityDeletion');
+
+        for (Opportunity opp : deletedOpps) {
+            List<Contact> contactPhone = [SELECT Id FROM Contact WHERE Id = :opp.ContactId];
+            Contact contact = contactPhone[0];
+            String toNumber = contact.MobilePhone;
+            
+            String body = 'The opportunity "' + opp.Name + '" is about to be deleted.';
+    
+            TwilioApiClient.sendSms(toNumber, body);
+        }
     }
 
     private List<Opportunity> updateOpportunityDetails(List<Opportunity> newOppList) {

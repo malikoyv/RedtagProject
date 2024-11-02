@@ -65,9 +65,15 @@ public with sharing class EmailService {
     }
 
     public static Messaging.SingleEmailMessage sendStatisticsEmail(Id summaryId){
-        Statistic__c summary = [SELECT Closed_Won_Opportunities__c, Closed_Lost_Opportunities__c, 
-                                Total_Opportunities__c, Last_Processing_Date__c 
-                                FROM Statistic__c WHERE Id = :summaryId LIMIT 1];
+        Statistic__c summary = [
+            SELECT Closed_Won_Opportunities__c, 
+                   Closed_Lost_Opportunities__c, 
+                   Total_Opportunities__c, 
+                   Last_Processing_Date__c 
+            FROM Statistic__c 
+            WHERE Id = :summaryId 
+            LIMIT 1
+        ];
 
         String subject = 'Opportunity Summary for Current Quarter';
         String body = 'Opportunity Summary:\n\n' +
